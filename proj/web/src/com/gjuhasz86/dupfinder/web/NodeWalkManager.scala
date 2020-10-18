@@ -1,5 +1,6 @@
 package com.gjuhasz86.dupfinder.web
 
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.LocatorEx.Snapshot
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import io.circe.parser._

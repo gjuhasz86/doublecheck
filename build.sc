@@ -41,7 +41,6 @@ object proj extends Module {
       ivy"org.scala-js:scalajs-dom_sjs1_2.13:1.1.0",
       ivy"com.lihaoyi:scalatags_sjs1_2.13:0.9.2",
       ivy"me.shadaj:slinky-web_sjs1_2.13:0.6.6",
-      ivy"com.softwaremill.sttp.client:core_sjs1_2.13:2.2.9",
       ivy"io.circe:circe-core_sjs1_2.13:0.13.0",
       ivy"io.circe:circe-generic_sjs1_2.13:0.13.0",
       ivy"io.circe:circe-parser_sjs1_2.13:0.13.0",

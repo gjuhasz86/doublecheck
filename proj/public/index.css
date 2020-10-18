@@ -5,19 +5,20 @@ body {
 table {
   user-select: none;
 }
-.nodeRow{
+
+.nodeRow {
   cursor: pointer;
 }
 
-.nodeRow:hover{
+.nodeRow:hover {
   background: antiquewhite;
 }
 
-.nodeRow.selectedRow{
+.nodeRow.selectedRow {
   background: aquamarine;
 }
 
-.nodeRow.selectedRow:hover{
+.nodeRow.selectedRow:hover {
   background: chartreuse;
 }
 
@@ -26,24 +27,24 @@ table {
   padding: 0px 5px;
 }
 
-.upDir:hover{
+.upDir:hover {
   cursor: pointer;
   background: antiquewhite;
 }
 
-.textBtn{
+.textBtn {
   cursor:pointer;
   display: inline-block;
 }
 
-.textBtn:hover{
+.textBtn:hover {
   background: beige;
 }
 
-.activeDup{
+.activeDup {
   color:blue;
 }
 
-.extCell:hover{
+.extCell:hover {
   background: coral;
 }
