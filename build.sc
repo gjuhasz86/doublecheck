@@ -1,6 +1,5 @@
 import mill._, scalalib._, mill.scalajslib._
 
-
 trait Commmon extends ScalaModule {
   def scalaVersion = "2.13.3"
 }
@@ -13,11 +12,18 @@ object proj extends Module {
 
   object backend extends ScalaModule with Commmon {
     override def moduleDeps = Seq(shared)
+    override def scalacOptions = Seq("-deprecation")
     override def ivyDeps = Agg(
       ivy"com.typesafe.akka::akka-http:10.2.1",
       ivy"com.typesafe.akka::akka-stream:2.6.10",
       ivy"ch.qos.logback:logback-classic:1.2.3",
-      ivy"com.typesafe.scala-logging::scala-logging:3.9.2"
+      ivy"com.typesafe.scala-logging::scala-logging:3.9.2",
+      ivy"io.circe::circe-core:0.13.0",
+      ivy"io.circe::circe-generic:0.13.0",
+      ivy"io.circe::circe-parser:0.13.0",
+      ivy"io.circe::circe-optics:0.13.0",
+      ivy"com.github.pathikrit::better-files:3.9.1",
+      ivy"de.heikoseeberger::akka-http-circe:1.35.0",
     )
   }
 
@@ -35,10 +41,18 @@ object proj extends Module {
       ivy"org.scala-js:scalajs-dom_sjs1_2.13:1.1.0",
       ivy"com.lihaoyi:scalatags_sjs1_2.13:0.9.2",
       ivy"me.shadaj:slinky-web_sjs1_2.13:0.6.6",
-      ivy"me.shadaj:slinky-core-ijext_2.13:0.6.6"
+      ivy"com.softwaremill.sttp.client:core_sjs1_2.13:2.2.9",
+      ivy"io.circe:circe-core_sjs1_2.13:0.13.0",
+      ivy"io.circe:circe-generic_sjs1_2.13:0.13.0",
+      ivy"io.circe:circe-parser_sjs1_2.13:0.13.0",
+      ivy"io.circe:circe-optics_sjs1_2.13:0.13.0",
+      ivy"io.circe:circe-generic-extras_sjs1_2.13:0.13.0",
     )
 
   }
+
+  def publicDir = T.sources {os.pwd / 'proj / 'public}
+  def publicFiles = T {publicDir().flatMap(p => os.walk(p.path)).map(PathRef(_))}
 
   def dist = T {
     if (!os.exists(os.pwd / 'dist)) {os.makeDir(os.pwd / 'dist)}
@@ -47,7 +61,7 @@ object proj extends Module {
     val jsFile = proj.web.fastOpt()
     val jsFileDir = jsFile.path.toNIO.getParent
     val jsFileName = jsFile.path.last
-
+    publicFiles
     println(s"Copying [${serverJar.path}]")
     println(s"Copying [${jsFile.path}]")
     println(s"Copying [${os.Path(jsFileDir.toString) / s"$jsFileName.map"}]")
@@ -55,8 +69,8 @@ object proj extends Module {
     os.copy.over(jsFile.path, os.pwd / 'dist / 'public / jsFileName)
     os.copy.over(os.Path(jsFileDir.toString) / s"$jsFileName.map", os.pwd / 'dist / 'public / s"$jsFileName.map")
 
-    os.walk(os.pwd / 'proj / 'public)
-      .map(_.relativeTo(os.pwd / 'proj / 'public))
+    publicFiles()
+      .map(_.path.relativeTo(os.pwd / 'proj / 'public))
       .foreach { f =>
         println(s"Copying [${os.pwd / 'proj / 'public / f}]")
         os.copy.over(os.pwd / 'proj / 'public / f, os.pwd / 'dist / 'public / f)

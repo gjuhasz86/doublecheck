@@ -2,19 +2,14 @@ package com.gjuhasz86.dupfinder.web
 
 import org.scalajs.dom
 import slinky.web.ReactDOM
+//import io.circe.generic.auto._
 
-import scala.scalajs.js.annotation.JSExportTopLevel
+//@JSExportTopLevel("Main")
+object OldMain {
 
-object Main {
-
-  @JSExportTopLevel("main")
+  //  @JSExport
+  //  @JSExportTopLevel("main")
   def main(): Unit = {
-    //import scala.scalajs.LinkingInfo
-    //import slinky.core._
-    //    if (LinkingInfo.developmentMode) {
-    //      hot.initialize()
-    //    }
-
     val container = Option(dom.document.getElementById("root")).getOrElse {
       val elem = dom.document.createElement("div")
       elem.id = "root"
@@ -22,6 +17,7 @@ object Main {
       elem
     }
 
-    ReactDOM.render(App(), container)
+    ReactDOM.render(HelloName(name = "sdfsd"), container)
   }
 }
+

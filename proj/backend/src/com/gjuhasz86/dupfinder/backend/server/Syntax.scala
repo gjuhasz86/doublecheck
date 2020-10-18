@@ -1,8 +1,8 @@
-package com.gjuhasz86.dupfinder.backend
+package com.gjuhasz86.dupfinder.backend.server
 
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directives.{get => get0}
 import akka.http.scaladsl.server.Directives.{post => post0}
-import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 
 object Syntax {

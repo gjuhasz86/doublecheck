@@ -1,0 +1,49 @@
+body {
+  font-family: monospace;
+}
+
+table {
+  user-select: none;
+}
+.nodeRow{
+  cursor: pointer;
+}
+
+.nodeRow:hover{
+  background: antiquewhite;
+}
+
+.nodeRow.selectedRow{
+  background: aquamarine;
+}
+
+.nodeRow.selectedRow:hover{
+  background: chartreuse;
+}
+
+.breadcrumb {
+  display: inline-block;
+  padding: 0px 5px;
+}
+
+.upDir:hover{
+  cursor: pointer;
+  background: antiquewhite;
+}
+
+.textBtn{
+  cursor:pointer;
+  display: inline-block;
+}
+
+.textBtn:hover{
+  background: beige;
+}
+
+.activeDup{
+  color:blue;
+}
+
+.extCell:hover{
+  background: coral;
+}
