@@ -113,12 +113,17 @@ import slinky.core.facade.Fragment
         div(
           div(
             className := "textBtn",
-            onClick := (_ => loadDupHandler()))
-          ("[LOAD DUPS]"),
+            onClick := (_ => loadDupHandler())
+          )("[LOAD DUPS]"),
+          div(
+            className := "textBtn",
+            onClick := (_ => dupListMgr.current.setAggr(!dlState.aggr))
+          )(if (dlState.aggr) "[NOAGGR]" else "[AGGR]"),
           div(
             className := "textBtn",
             onClick := (_ => dupListMgr.current.reset())
           )("[CLEAR]"),
+          div(),
           dlState.richPaths.map { rp =>
             div(
               key := rp.path,
