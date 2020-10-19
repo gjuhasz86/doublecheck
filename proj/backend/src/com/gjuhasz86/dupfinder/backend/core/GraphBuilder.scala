@@ -2,6 +2,9 @@ package com.gjuhasz86.dupfinder.backend.core
 
 import better.files._
 import com.gjuhasz86.dupfinder.backend.core.Utils.DummyHash
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter
+import com.gjuhasz86.dupfinder.shared.request.ChildSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeReq
 
 import scala.annotation.tailrec
 
@@ -62,5 +65,37 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
           loop(acc + (node.path -> node), node.children ::: rest)
       }
     loop(Map(), root :: Nil)
+  }
+
+  def search(req: NodeReq) = {
+
+    val rootNodes = req.roots.flatMap(nodesByPath.get)
+    val selected = req.selection match {
+      case ChildSelection.All => rootNodes.flatMap(_.children)
+      case ChildSelection.Direct => allChildren(rootNodes.toList)
+    }
+
+    selected.filter { node =>
+      req.filters.forall {
+        case ChildFilter.NonEmpty =>
+          node.size != 0
+        case ChildFilter.NodeTypeIn(ntypes) =>
+          ntypes.contains(node.ntype.short)
+        case ChildFilter.HasDups =>
+          pathsByHash.getOrElse(node.hash, Nil).size > 1
+        case ChildFilter.HasExtDups =>
+          pathsByHash.getOrElse(node.hash, Nil).exists(path => req.roots.exists(root => path.startsWith(root)))
+      }
+    }
+
+  }
+
+  private def allChildren(nodes: List[Node]): Set[Node] = {
+    def loop(acc: Set[Node], unvisited: List[Node]): Set[Node] = unvisited match {
+      case Nil => acc
+      case head :: rest if acc.contains(head) => loop(acc, rest)
+      case head :: rest if !acc.contains(head) => loop(acc + head, head.children ::: rest)
+    }
+    loop(Set(), nodes)
   }
 }

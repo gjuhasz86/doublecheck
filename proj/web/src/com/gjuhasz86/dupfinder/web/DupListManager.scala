@@ -34,6 +34,7 @@ case class DupListState(roots: List[Node], rawPaths: List[String], aggr: Boolean
   val richPaths = paths.map { p => DupListPath(p, rootSet.contains(p)) }
 
 }
+
 @react class DupListManager extends Component {
 
   implicit private val customConfig: Configuration = Configuration.default.withDefaults
@@ -51,9 +52,13 @@ case class DupListState(roots: List[Node], rawPaths: List[String], aggr: Boolean
 
   def reset() = setState(initialState)
 
-  override def componentWillUpdate(nextProps: Props, nextState: DupListState): Unit = {
-    if (nextState.roots != state.roots) {
-      fetchDups(nextState.roots.map(_.hash))
+  override def componentDidMount(): Unit = {
+    fetchDups(state.roots.map(_.hash))
+  }
+
+  override def componentDidUpdate(prevProps: Props, prevState: DupListState): Unit = {
+    if (prevState.roots != state.roots) {
+      fetchDups(state.roots.map(_.hash))
     }
   }
 

@@ -16,11 +16,13 @@ import slinky.core.facade.Fragment
 
   type Props = Unit
 
+  val navMgr: ReactRef[NavManager] = React.createRef[NavManager.Def]
   val nodeWalkMgr: ReactRef[NodeWalkManager] = React.createRef[NodeWalkManager.Def]
   val aggrNodeMgr: ReactRef[AggregateNodeManager] = React.createRef[AggregateNodeManager.Def]
   val dupListMgr: ReactRef[DupListManager] = React.createRef[DupListManager.Def]
   val mainNodeList: ReactRef[NodeList] = React.createRef[NodeList.Def]
   val aggNodeList: ReactRef[NodeList] = React.createRef[NodeList.Def]
+  val navNodeList: ReactRef[NodeList] = React.createRef[NodeList.Def]
 
   def fetchRoot(): Unit =
     FetchUtils.getBackend("root") { res =>
@@ -90,6 +92,21 @@ import slinky.core.facade.Fragment
         )
       ).withRef(nodeWalkMgr),
       hr(),
+      NavManager((nState: NavState) =>
+        div(
+          div(
+            className := "textBtn",
+            onClick := (_ => navMgr.current.setRoots(mainNodeList.current.getSelected))
+          )("[LOAD]"),
+          NodeList(
+            nodes = nState.nodes,
+            onNodeClick = (e => println(s"clicked $e")),
+            onExtClick = (_ => ()),
+            onSelection = (_ => navNodeList.current.clearSelection())
+          ).withRef(navNodeList)
+        )
+      ).withRef(navMgr),
+      hr(),
       AggregateNodeManager((anState: AggregateNodeState) =>
         div(
           div(anState.path),
@@ -131,7 +148,7 @@ import slinky.core.facade.Fragment
             )(rp.path)
           }
         )
-      ).withRef(dupListMgr)
+      ).withRef(dupListMgr),
     )
   }
 }
