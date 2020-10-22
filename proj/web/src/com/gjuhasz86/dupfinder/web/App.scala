@@ -1,5 +1,7 @@
 package com.gjuhasz86.dupfinder.web
 
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter
+import com.gjuhasz86.dupfinder.shared.request.ChildSelection
 import io.circe.generic.extras.Configuration
 import io.circe.parser._
 import slinky.core._
@@ -96,8 +98,48 @@ import slinky.core.facade.Fragment
         div(
           div(
             className := "textBtn",
-            onClick := (_ => navMgr.current.setRoots(mainNodeList.current.getSelected))
+            onClick := (_ => navMgr.current.toggleAutoFetch())
+          )(if (nState.autoFetch) "[MANUAL]" else "[AUTO]"),
+          div(
+            className := "textBtn",
+            onClick := (_ => if (!nState.autoFetch) {navMgr.current.forceFetch()})
           )("[LOAD]"),
+          div(
+            className := "textBtn",
+            onClick := (_ => {
+              navMgr.current.setRoots(mainNodeList.current.getSelected)
+            })
+          )("[LINK]"),
+          if (nState.childSelection == ChildSelection.Direct)
+            div(
+              className := "textBtn",
+              onClick := (_ => navMgr.current.setChildSelection(ChildSelection.Deep))
+            )("[DEEP]")
+          else
+            div(
+              className := "textBtn",
+              onClick := (_ => navMgr.current.setChildSelection(ChildSelection.Direct))
+            )("[DIRECT]"),
+          div(
+            className := "textBtn",
+            onClick := (_ => navMgr.current.toggleFilter(ChildFilter.NonEmpty))
+          )("[NONZERO]"),
+          div(
+            className := "textBtn",
+            onClick := (_ => navMgr.current.toggleFilter(ChildFilter.Empty))
+          )("[ZERO]"),
+          div(
+            className := "textBtn",
+            onClick := (_ => navMgr.current.toggleFilter(ChildFilter.HasDups))
+          )("[DUPS]"),
+          div(
+            className := "textBtn",
+            onClick := (_ => navMgr.current.toggleFilter(ChildFilter.HasExtDups))
+          )("[EXT]"),
+          div(if (nState.autoFetch) "Reload mode: AUTO" else "Reload mode: MANUAL"),
+          div(s"Roots: ${nState.roots.map(_.name).mkString(",")}"),
+          div(s"Children selection: ${nState.childSelection}"),
+          div(s"Filters: ${nState.filter.mkString(",")}"),
           NodeList(
             nodes = nState.nodes,
             onNodeClick = (e => println(s"clicked $e")),

@@ -71,20 +71,32 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
 
     val rootNodes = req.roots.flatMap(nodesByPath.get)
     val selected = req.selection match {
-      case ChildSelection.All => rootNodes.flatMap(_.children)
-      case ChildSelection.Direct => allChildren(rootNodes.toList)
+      case ChildSelection.Direct => rootNodes.flatMap(_.children)
+      case ChildSelection.Deep => allChildren(rootNodes.toList)
     }
 
     selected.filter { node =>
       req.filters.forall {
         case ChildFilter.NonEmpty =>
           node.size != 0
+        case ChildFilter.Empty =>
+          node.size == 0
         case ChildFilter.NodeTypeIn(ntypes) =>
           ntypes.contains(node.ntype.short)
         case ChildFilter.HasDups =>
           pathsByHash.getOrElse(node.hash, Nil).size > 1
         case ChildFilter.HasExtDups =>
-          pathsByHash.getOrElse(node.hash, Nil).exists(path => req.roots.exists(root => path.startsWith(root)))
+          if (pathsByHash.getOrElse(node.hash, Nil).size > 1) {
+            println(node)
+            pathsByHash.getOrElse(node.hash, Nil)
+              .foreach { path =>
+                println(path)
+                println(req.roots.exists(root => !path.startsWith(root)))
+              }
+          }
+          pathsByHash.getOrElse(node.hash, Nil)
+            .filterNot(_ == node.path)
+            .exists(path => req.roots.exists(root => !path.startsWith(root)))
       }
     }
 

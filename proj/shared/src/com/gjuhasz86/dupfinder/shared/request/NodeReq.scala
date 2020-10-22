@@ -5,13 +5,14 @@ case class NodeReq(roots: Set[String], selection: ChildSelection, filters: Set[C
 sealed trait ChildSelection
 object ChildSelection {
   case object Direct extends ChildSelection
-  case object All extends ChildSelection
+  case object Deep extends ChildSelection
 }
 
 sealed trait ChildFilter
 object ChildFilter {
   case class NodeTypeIn(ntypes: Set[String]) extends ChildFilter
   case object NonEmpty extends ChildFilter
+  case object Empty extends ChildFilter
   case object HasDups extends ChildFilter
   case object HasExtDups extends ChildFilter
 }
