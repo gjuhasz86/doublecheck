@@ -3,15 +3,15 @@ package com.gjuhasz86.dupfinder.web
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildSelection
 import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.auto._
 import io.circe.parser._
 import slinky.core._
 import slinky.core.annotations.react
+import slinky.core.facade.Fragment
 import slinky.core.facade.React
 import slinky.core.facade.ReactElement
 import slinky.core.facade.ReactRef
 import slinky.web.html._
-import io.circe.generic.extras.auto._
-import slinky.core.facade.Fragment
 
 @react class App extends StatelessComponent {
   implicit private val customConfig: Configuration = Configuration.default.withDefaults

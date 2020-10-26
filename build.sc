@@ -46,6 +46,7 @@ object proj extends Module {
       ivy"io.circe:circe-parser_sjs1_2.13:0.13.0",
       ivy"io.circe:circe-optics_sjs1_2.13:0.13.0",
       ivy"io.circe:circe-generic-extras_sjs1_2.13:0.13.0",
+      ivy"com.raquo:laminar_sjs1_2.13:0.11.0",
     )
 
   }
