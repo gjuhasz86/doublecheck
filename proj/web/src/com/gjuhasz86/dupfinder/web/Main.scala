@@ -7,7 +7,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 object Main {
 
-  //  @JSExportTopLevel("main")
+  @JSExportTopLevel("main")
   def main(): Unit = {
     //import scala.scalajs.LinkingInfo
     //import slinky.core._
@@ -22,6 +22,7 @@ object Main {
       elem
     }
 
-    ReactDOM.render(App(), container)
+    //    ReactDOM.render(App(), container)
+    ReactDOM.render(proto2.App2(), container)
   }
 }

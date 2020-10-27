@@ -38,6 +38,7 @@ object proj extends Module {
     )
 
     override def ivyDeps = Agg(
+      ivy"org.scala-lang.modules:scala-collection-contrib_sjs1_2.13:0.2.2",
       ivy"org.scala-js:scalajs-dom_sjs1_2.13:1.1.0",
       ivy"com.lihaoyi:scalatags_sjs1_2.13:0.9.2",
       ivy"me.shadaj:slinky-web_sjs1_2.13:0.6.6",
