@@ -17,13 +17,18 @@ case class NavMgrState(parents: List[Node]) {
 }
 
 @react class NavManager extends Component {
-  case class Props(children: NavMgrState => ReactElement)
+  case class Props(onCurrentNodeChange: Node => Unit, children: NavMgrState => ReactElement)
   type State = NavMgrState
   override def initialState = NavMgrState(Nil)
   override def render(): ReactElement = props.children(state)
 
   def root(node: Node) = setState(_.copy(List(node)))
-  def up(n: Int) = setState(_.copy(state.parents.drop(n min (state.parents.size - 1))))
+  def up(n: Int = 1) = setState(_.copy(state.parents.drop(n min (state.parents.size - 1))))
   def down(node: Node) = setState(_.copy(node :: state.parents))
 
+  override def componentDidUpdate(prevProps: Props, prevState: State) = {
+    if (prevState.current != state.current) {
+      props.onCurrentNodeChange(state.current)
+    }
+  }
 }
