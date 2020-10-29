@@ -12,7 +12,7 @@ object proj extends Module {
 
   object backend extends ScalaModule with Commmon {
     override def moduleDeps = Seq(shared)
-    override def scalacOptions = Seq("-deprecation")
+    override def scalacOptions = Seq("-deprecation", "-Ymacro-annotations", "-language:higherKinds")
     override def ivyDeps = Agg(
       ivy"com.typesafe.akka::akka-http:10.2.1",
       ivy"com.typesafe.akka::akka-stream:2.6.10",
@@ -34,7 +34,8 @@ object proj extends Module {
 
     override def scalacOptions = List(
       "-language:higherKinds",
-      "-Ymacro-annotations"
+      "-Ymacro-annotations",
+      "-deprecation",
     )
 
     override def ivyDeps = Agg(

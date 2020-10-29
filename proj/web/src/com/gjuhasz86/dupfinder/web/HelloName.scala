@@ -9,6 +9,7 @@ import slinky.core._
 import slinky.web.ReactDOM
 import org.scalajs.dom
 import org.scalajs.dom.Event
+import org.scalajs.dom.document
 import org.scalajs.dom.raw.HTMLInputElement
 import org.scalajs.dom.raw.XMLHttpRequest
 import slinky.core._
@@ -32,7 +33,19 @@ import slinky.core.facade.Fragment
   case class Props(name: String)
 
   val node = Node(props.name, 1337)
+
+  override def componentDidMount() = {
+    document.addEventListener("contextmenu)", ((e: Any) => println("CC")))
+  }
   def render() = {
-    h1(s"Hello Slinky [$node] !!")
+    div(
+      h1(
+        onClick := (_ => println("mmm")),
+        onKeyPress := (_ => println("kkkkkkkk")),
+        onContextMenu := { e => e.preventDefault(); println("ccccccc") },
+        s"Hello Slinky [$node] !!"),
+      div("a"),
+      div("sssssssssssssssssssssssssssssssssssssssssssssssssss")
+    )
   }
 }

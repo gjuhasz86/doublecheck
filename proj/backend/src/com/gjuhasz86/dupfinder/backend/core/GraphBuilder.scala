@@ -108,6 +108,6 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
       case head :: rest if acc.contains(head) => loop(acc, rest)
       case head :: rest if !acc.contains(head) => loop(acc + head, head.children ::: rest)
     }
-    loop(Set(), nodes)
+    loop(Set(), nodes.flatMap(_.children))
   }
 }

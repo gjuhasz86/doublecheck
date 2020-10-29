@@ -4,6 +4,8 @@ import org.scalajs.dom
 import slinky.web.ReactDOM
 //import io.circe.generic.auto._
 
+import scala.scalajs.js.annotation.JSExportTopLevel
+
 //@JSExportTopLevel("Main")
 object OldMain {
 
