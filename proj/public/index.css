@@ -36,9 +36,14 @@ body {
   padding: 0px 5px;
 }
 
+.textNoBtn {
+  display: inline-block;
+}
+
 .textBtn {
   cursor: default;
   display: inline-block;
+  margin: 0px 5px;
 }
 
 .textBtn:hover {

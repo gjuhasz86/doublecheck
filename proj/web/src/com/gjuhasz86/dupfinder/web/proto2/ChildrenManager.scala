@@ -11,7 +11,7 @@ import slinky.core._
 import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
 
-case class ChildrenMgrState(loading: Boolean, children: List[Node], sorting: Ordering[Node]) {
+case class ChildrenMgrState(loading: Boolean, children: List[Node], sorting: Ordering[Node], limit: Int) {
 }
 
 @react class ChildrenManager extends Component {
@@ -20,9 +20,17 @@ case class ChildrenMgrState(loading: Boolean, children: List[Node], sorting: Ord
 
   case class Props(children: ChildrenMgrState => ReactElement)
   type State = ChildrenMgrState
-  override def initialState = ChildrenMgrState(false, Nil, Ordering.by(n => (n.ntype, n.name)))
+  override def initialState = ChildrenMgrState(false, Nil, Ordering.by(n => (n.ntype, n.name)), 1000)
   override def render(): ReactElement = props.children(state)
 
+  def setLimit(n: Int) =
+    setState(_.copy(limit = n))
+
+  def incLimitBy(n: Int) =
+    setState(_.copy(limit = state.limit + n))
+
+  def noLimit() =
+    setState(_.copy(limit = state.children.size))
 
   def sortByName() = {
     val ord: Ordering[Node] = Ordering.by(n => (n.ntype, n.name))
@@ -41,7 +49,7 @@ case class ChildrenMgrState(loading: Boolean, children: List[Node], sorting: Ord
     setState(_.copy(loading = true))
     FetchUtils.postBackend("search", req.asJson.noSpaces) { res =>
       val Right(nodes) = decode[List[Node]](res)
-      setState(_.copy(loading = false, children = nodes.sorted(state.sorting)))
+      setState(_.copy(loading = false, children = nodes.sorted(state.sorting), limit = 1000))
     }
   }
 }

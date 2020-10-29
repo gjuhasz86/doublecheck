@@ -112,7 +112,7 @@ import scala.collection.decorators._
                   div(className := "breadcrumb")(">")
                 )
               ),
-              div(selMgrState.selected.size),
+              div(),
               table(
                 className := (if (chldMgrState.loading) "nodeTable loading" else "nodeTable")
               )(
@@ -127,7 +127,7 @@ import scala.collection.decorators._
                   )(
                     td("D"), td(".."), td("0"), td("0"), td("0"), td("0"), td("0"), td("0")
                   ),
-                  chldMgrState.children.zipWithIndex.map { case (node, idx) =>
+                  chldMgrState.children.take(chldMgrState.limit).zipWithIndex.map { case (node, idx) =>
                     tr(
                       key := node.path,
                       className := (if (selMgrState.selected.contains(node)) "nodeRow selectedRow" else "nodeRow"),
@@ -162,6 +162,15 @@ import scala.collection.decorators._
                     )
                   }
                 )
+              ),
+              div(hidden := chldMgrState.children.size <= chldMgrState.limit)(
+                div(className := "textNoBtn")(s"Omitted ${chldMgrState.children.size - chldMgrState.limit} rows."),
+                div(
+                  className := "textBtn", onClick := (_ => chldMgr.current.incLimitBy(1000))
+                )("[+1000]"),
+                div(
+                  className := "textBtn", onClick := (_ => chldMgr.current.noLimit())
+                )(s"[+${chldMgrState.children.size - chldMgrState.limit}]"),
               ),
               div(
                 hidden := !state.ctxMenuActive,
