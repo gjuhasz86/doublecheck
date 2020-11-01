@@ -11,8 +11,7 @@ import slinky.core._
 import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
 
-case class ChildrenMgrState(loading: Boolean, children: List[Node], sorting: Ordering[Node], limit: Int) {
-}
+case class ChildrenMgrState(loading: Boolean, children: List[Node], sorting: Ordering[Node], limit: Int)
 
 @react class ChildrenManager extends Component {
 

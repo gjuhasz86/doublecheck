@@ -45,6 +45,7 @@ import scala.collection.decorators._
   val navMgr: ReactRef[NavManager] = React.createRef[NavManager.Def]
   val chldMgr: ReactRef[ChildrenManager] = React.createRef[ChildrenManager.Def]
   val selMgr: ReactRef[SelectionManager] = React.createRef[SelectionManager.Def]
+  val sdMgr: ReactRef[SelfDupManager] = React.createRef[SelfDupManager.Def]
 
 
   override def componentDidMount(): Unit = {
@@ -94,6 +95,14 @@ import scala.collection.decorators._
                 className := (if (navMgrState.filter.contains(HasExtDups)) "textBtn active" else "textBtn"),
                 onClick := (_ => navMgr.current.toggleFilter(HasExtDups))
               )("[EXTDUPS]"),
+              //              div(
+              //                className := (if (navMgrState.aggregate) "textBtn active" else "textBtn"),
+              //                onClick := (_ => navMgr.current.setAggregate(true))
+              //              )("[AGGR]"),
+              //              div(
+              //                className := (if (!navMgrState.aggregate) "textBtn active" else "textBtn"),
+              //                onClick := (_ => navMgr.current.setAggregate(false))
+              //              )("[NOAGGR]"),
               div(className := "breadcrumbHolder")(
                 navMgrState.parents.zipWithIndex.reverse.map { case (navNode, idx) =>
                   div(
@@ -117,7 +126,7 @@ import scala.collection.decorators._
                 className := (if (chldMgrState.loading) "nodeTable loading" else "nodeTable")
               )(
                 thead(
-                  tr(td("typ"), td("name"), td("cld"), td("dmy"), td("nzf"), td("dup"), td("ext"), td("sdc"))
+                  tr(td("typ"), td("hash"), td("name"), td("cld"), td("dmy"), td("nzf"), td("dup"), td("ext"), td("sdc"))
                 ),
                 tbody(
                   tr(
@@ -125,7 +134,7 @@ import scala.collection.decorators._
                     className := "nodeRow",
                     onDoubleClick := (_ => navMgr.current.up())
                   )(
-                    td("D"), td(".."), td("0"), td("0"), td("0"), td("0"), td("0"), td("0")
+                    td("D"), td(""), td(".."), td("0"), td("0"), td("0"), td("0"), td("0"), td("0")
                   ),
                   chldMgrState.children.take(chldMgrState.limit).zipWithIndex.map { case (node, idx) =>
                     tr(
@@ -150,6 +159,7 @@ import scala.collection.decorators._
                       }
                     )(
                       td(node.ntype),
+                      td(node.hash),
                       td(
                         title := (if (navMgrState.fullPath) None else Some(node.path))
                       )(if (navMgrState.fullPath) node.path else node.name),
@@ -181,15 +191,9 @@ import scala.collection.decorators._
                 div(
                   className := "item selectable",
                   onClick := { _ =>
-                    navMgr.current.down(selMgrState.selected.toList, ChildSelection.Direct)
-                  }
-                )("DIRECT CHILDREN"),
-                div(
-                  className := "item selectable",
-                  onClick := { _ =>
                     navMgr.current.down(selMgrState.selected.toList, Deep, Set(ChildFilter.NodeTypeIn(Set("F"))))
                   }
-                )("DEEP CHILDREN"),
+                )("CHILDREN"),
                 div(
                   className := "item selectable",
                   onClick := { _ =>
@@ -202,11 +206,35 @@ import scala.collection.decorators._
                     navMgr.current.down(selMgrState.selected.toList, Deep, Set(HasExtDups))
                   }
                 )("EXT DUPS"),
+                div(
+                  className := "item selectable",
+                  onClick := { _ =>
+                    sdMgr.current.loadChildren(selMgrState.selected.toList)
+                  }
+                )(s"DOUBLES (${selMgrState.selected.map(_.hash).size})"),
               )
             )
           ).withRef(selMgr)
         ).withRef(chldMgr)
-      ).withRef(navMgr)
+      ).withRef(navMgr),
+      SelfDupManager(aggrMgrState =>
+        table(className := "nodeTable")(
+          thead(
+            tr(td("path"), td("count"))
+          ),
+          tbody(
+            aggrMgrState.aggr.zipWithIndex.map { case (aNode, idx) =>
+              tr(
+                key := aNode.path,
+                className := "nodeRow"
+              )(
+                td(title := aNode.hashes.toList.sorted.mkString(","))(aNode.path),
+                td(aNode.hashes.size)
+              )
+            }
+          )
+        )
+      ).withRef(sdMgr),
     )
   }
 }

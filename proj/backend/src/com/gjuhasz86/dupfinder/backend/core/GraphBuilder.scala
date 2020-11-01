@@ -1,11 +1,10 @@
 package com.gjuhasz86.dupfinder.backend.core
 
 import better.files._
-import com.gjuhasz86.dupfinder.backend.core.Utils.DummyHash
+import com.gjuhasz86.dupfinder.backend.core.Utils._
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
-
 import scala.annotation.tailrec
 
 class GraphBuilder(nodesFile: File, hashFile: File) {
@@ -110,4 +109,14 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
     }
     loop(Set(), nodes.flatMap(_.children))
   }
+
+  def dups(hashes: List[String]) =
+    hashes.distinct
+      .flatMap(pathsByHash.get)
+      .flatten.distinct
+      .map(nodesByPath)
+      .flatMap(allParents)
+
+  def allParents(node: Node): List[Node] =
+    node.path.toFile.path.allParents.map(_.pathAsString).map(nodesByPath)
 }

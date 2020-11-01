@@ -20,18 +20,34 @@ object NavNode {
 }
 
 
-case class NavMgrState(parents: List[NavNode], selection: ChildSelection, filter: Set[ChildFilter], fullPath: Boolean) {
+case class NavMgrState(parents: List[NavNode], selection: ChildSelection, filter: Set[ChildFilter], fullPath: Boolean, aggregate: Boolean) {
   def current: NavNode = parents.headOption.getOrElse(NavNode.default)
+
+  def withFilter(cf: ChildFilter) =
+    this.copy(filter = filter -- NavMgrState.conflicts(cf) + cf)
+}
+object NavMgrState {
+  private val conflicts =
+    Map[ChildFilter, Set[ChildFilter]](
+      Empty -> Set(NonEmpty),
+      NonEmpty -> Set(Empty),
+      HasExtDups -> Set(HasDups),
+      HasDups -> Set(HasExtDups)
+    ).withDefaultValue(Set())
+
 }
 
 @react class NavManager extends Component {
   case class Props(onCurrentNodeChange: NavNode => Unit, children: NavMgrState => ReactElement)
   type State = NavMgrState
-  override def initialState = NavMgrState(Nil, ChildSelection.Direct, Set(), false)
+  override def initialState = NavMgrState(Nil, ChildSelection.Direct, Set(), false, false)
   override def render(): ReactElement = props.children(state)
 
   def setFullPath(enabled: Boolean) =
     setState(_.copy(fullPath = enabled))
+
+  def setAggregate(enabled: Boolean) =
+    setState(_.copy(aggregate = enabled))
 
   def toggleSelection() =
     if (state.selection == ChildSelection.Deep)
@@ -45,26 +61,22 @@ case class NavMgrState(parents: List[NavNode], selection: ChildSelection, filter
   def toggleFilter(cf: ChildFilter) =
     if (state.filter.contains(cf)) remFilter(cf) else addFilter(cf)
 
-  private val conflicts =
-    Map[ChildFilter, Set[ChildFilter]](
-      Empty -> Set(NonEmpty),
-      NonEmpty -> Set(Empty),
-      HasExtDups -> Set(HasDups),
-      HasDups -> Set(HasExtDups)
-    ).withDefaultValue(Set())
-
   def addFilter(cf: ChildFilter) =
-    setState(_.copy(filter = state.filter -- conflicts(cf) + cf))
+    setState(_.withFilter(cf))
 
   def remFilter(cf: ChildFilter) =
     setState(_.copy(filter = state.filter - cf))
 
   def root(node: Node) = setState(_.copy(parents = List(state.current.copy(nodes = List(node)))))
-  def up(n: Int = 1) = setState(_.copy(
-    parents = state.parents.drop(n min (state.parents.size - 1)),
-    selection = state.current.selection,
-    filter = state.current.filter
-  ))
+  def up(n: Int = 1) = {
+    val newParents = state.parents.drop(n min (state.parents.size - 1))
+    setState(_.copy(
+      parents = newParents,
+      selection = state.current.selection,
+      filter = state.current.filter,
+      fullPath = newParents.head.selection == ChildSelection.Deep
+    ))
+  }
 
   def downSingle(
     node: Node,
@@ -75,14 +87,20 @@ case class NavMgrState(parents: List[NavNode], selection: ChildSelection, filter
   def down(
     nodes: List[Node],
     sel: ChildSelection = state.selection,
-    filter: Set[ChildFilter] = state.filter): Unit
-  = down(NavNode(nodes, sel, filter))
+    filters: Set[ChildFilter] = state.filter): Unit
+  = {
+    val ns = filters.toList.foldLeft(state)(_.withFilter(_))
+    down(NavNode(nodes, sel, ns.filter))
+  }
 
-  def down(root: NavNode): Unit = setState(_.copy(root :: state.parents))
+  def down(root: NavNode): Unit =
+    setState(_.copy(
+      parents = root :: state.parents,
+      fullPath = root.selection == ChildSelection.Deep
+    ))
 
-  override def componentDidUpdate(prevProps: Props, prevState: State) = {
+  override def componentDidUpdate(prevProps: Props, prevState: State) =
     if (prevState.current.nodes != state.current.nodes) {
       props.onCurrentNodeChange(state.current)
     }
-  }
 }
