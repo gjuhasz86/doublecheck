@@ -80,9 +80,15 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
     selected.filter { node =>
       req.filters.forall {
         case ChildFilter.NonEmpty =>
-          node.size != 0
+          node.ntype match {
+            case NodeType.Fil(_) => node.size != 0
+            case _ => true
+          }
         case ChildFilter.Empty =>
-          node.size == 0
+          node.ntype match {
+            case NodeType.Fil(_) => node.size == 0
+            case _ => true
+          }
         case ChildFilter.NodeTypeIn(ntypes) =>
           ntypes.contains(node.ntype.short)
         case ChildFilter.HasDups =>
@@ -120,6 +126,7 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
       .flatten.distinct
       .map(nodesByPath)
       .flatMap(allParents)
+      .distinct
 
   def allParents(node: Node): List[Node] = {
     val segments = Paths.get(node.path)

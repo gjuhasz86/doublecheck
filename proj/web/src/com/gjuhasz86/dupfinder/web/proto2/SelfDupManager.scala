@@ -17,13 +17,16 @@ case class SelfDupMgrState(loading: Boolean, rootSet: Set[String], nodes: List[N
 
   private def allParents(path: String) = {
     val segments = path.split("/").toList
-    segments.indices.map(i => segments.take(i).mkString("/")).toList
+    segments.indices.map(i => segments.take(i).mkString("/")).toList.filterNot(_.isEmpty)
   }
 
+
   val aggr = {
+
+    val valids = nodes.filter(_.ntype == "F").map(_.path).toSet -- rootSet
     val preRes: List[AggrNode] =
       nodes
-        .filterNot(n => rootSet.contains(n.path))
+        .filter(n => valids.contains(n.path))
         .flatMap(n => allParents(n.path).map(p => p -> n.hash))
         .groupBy { case (p, _) => p }
         .map { case (p, hs) => AggrNode(p, hs.map(_._2).toSet) }

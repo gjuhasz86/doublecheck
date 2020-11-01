@@ -4,6 +4,7 @@ import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Empty
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasExtDups
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NodeTypeIn
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NonEmpty
 import com.gjuhasz86.dupfinder.shared.request.ChildSelection
 import com.gjuhasz86.dupfinder.shared.request.ChildSelection.Deep
@@ -27,6 +28,7 @@ import slinky.core.facade.ReactRef
 import slinky.web.html._
 
 import scala.collection.decorators._
+import scala.scalajs.js.Dynamic.literal
 
 @react class App2 extends Component {
   implicit private val customConfig: Configuration = Configuration.default.withDefaults
@@ -80,6 +82,14 @@ import scala.collection.decorators._
                 onClick := (_ => navMgr.current.setSelection(Deep))
               )("[DEEP]"),
               div(
+                className := (if (navMgrState.filter.contains(NodeTypeIn(Set("F")))) "textBtn active" else "textBtn"),
+                onClick := (_ => navMgr.current.toggleFilter(NodeTypeIn(Set("F"))))
+              )("[FILES]"),
+              div(
+                className := (if (navMgrState.filter.contains(NodeTypeIn(Set("D")))) "textBtn active" else "textBtn"),
+                onClick := (_ => navMgr.current.toggleFilter(NodeTypeIn(Set("D"))))
+              )("[DIRS]"),
+              div(
                 className := (if (navMgrState.filter.contains(Empty)) "textBtn active" else "textBtn"),
                 onClick := (_ => navMgr.current.toggleFilter(Empty))
               )("[EMPTY]"),
@@ -88,13 +98,17 @@ import scala.collection.decorators._
                 onClick := (_ => navMgr.current.toggleFilter(NonEmpty))
               )("[NON-EMPTY]"),
               div(
-                className := (if (navMgrState.filter.contains(HasDups)) "textBtn active" else "textBtn"),
-                onClick := (_ => navMgr.current.toggleFilter(HasDups))
-              )("[DUPS]"),
-              div(
-                className := (if (navMgrState.filter.contains(HasExtDups)) "textBtn active" else "textBtn"),
-                onClick := (_ => navMgr.current.toggleFilter(HasExtDups))
-              )("[EXTDUPS]"),
+                className := "textBtn",
+                onClick := (_ => selMgr.current.selectAll())
+              )("[SELECTALL]"),
+              //              div(
+              //                className := (if (navMgrState.filter.contains(HasDups)) "textBtn active" else "textBtn"),
+              //                onClick := (_ => navMgr.current.toggleFilter(HasDups))
+              //              )("[DUPS]"),
+              //              div(
+              //                className := (if (navMgrState.filter.contains(HasExtDups)) "textBtn active" else "textBtn"),
+              //                onClick := (_ => navMgr.current.toggleFilter(HasExtDups))
+              //              )("[EXTDUPS]"),
               //              div(
               //                className := (if (navMgrState.aggregate) "textBtn active" else "textBtn"),
               //                onClick := (_ => navMgr.current.setAggregate(true))
@@ -198,13 +212,13 @@ import scala.collection.decorators._
                 div(
                   className := "item selectable",
                   onClick := { _ =>
-                    navMgr.current.down(selMgrState.selected.toList, Deep, Set(HasDups))
+                    navMgr.current.down(selMgrState.selected.toList, Deep, Set(HasDups, NodeTypeIn(Set("F"))))
                   }
                 )("DUPS"),
                 div(
                   className := "item selectable",
                   onClick := { _ =>
-                    navMgr.current.down(selMgrState.selected.toList, Deep, Set(HasExtDups))
+                    navMgr.current.down(selMgrState.selected.toList, Deep, Set(HasExtDups, NodeTypeIn(Set("F"))))
                   }
                 )("EXT DUPS"),
                 div(

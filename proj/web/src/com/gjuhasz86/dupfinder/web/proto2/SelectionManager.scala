@@ -29,6 +29,7 @@ case class SelectionMgrState(lastSelected: Int, selected: Set[Node], dragOp: Sel
   override def render(): ReactElement = props.children(state)
 
   def makeSelection(cmd: SelCmd[Node]) = (cmd match {
+    case cmd@All(_) => cmd.normalize(props.items, state.lastSelected)
     case cmd@ByIdx(_, _) => cmd.normalize(props.items)
     case cmd@ByItem(_, _) => cmd.normalize(props.items)
     case cmd@ByRangeCont(_, _) => cmd.normalize(props.items, state.lastSelected)
@@ -44,6 +45,7 @@ case class SelectionMgrState(lastSelected: Int, selected: Set[Node], dragOp: Sel
 
   def clear() = setState(_.copy(lastSelected = 0, selected = Set()))
   def cleanAdd(node: Node) = makeSelection(ByItem(Op.CleanAdd, node))
+  def selectAll() = makeSelection(All(Op.Add))
   def add(node: Node) = makeSelection(ByItem(Op.Add, node))
   def rem(node: Node) = makeSelection(ByItem(Op.Rem, node))
   def toggle(node: Node) = makeSelection(ByItem(Op.Toggle, node))
@@ -65,6 +67,9 @@ object SelectionManagerModels {
       case object Toggle extends Op
     }
 
+    case class All[A](op: Op) extends SelCmd[A] {
+      def normalize(items: List[A], lastIdx: Int) = SelEvent(op, items.toSet, lastIdx)
+    }
     case class ByItem[A](op: Op, a: A) extends SelCmd[A] {
       def normalize(items: List[A]) = SelEvent(op, Set(a), items.indexOf(a))
     }

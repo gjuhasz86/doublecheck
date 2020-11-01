@@ -32,7 +32,9 @@ object NavMgrState {
       Empty -> Set(NonEmpty),
       NonEmpty -> Set(Empty),
       HasExtDups -> Set(HasDups),
-      HasDups -> Set(HasExtDups)
+      HasDups -> Set(HasExtDups),
+      NodeTypeIn(Set("D")) -> Set(NodeTypeIn(Set("F"))),
+      NodeTypeIn(Set("F")) -> Set(NodeTypeIn(Set("D")))
     ).withDefaultValue(Set())
 
 }
@@ -40,7 +42,8 @@ object NavMgrState {
 @react class NavManager extends Component {
   case class Props(onCurrentNodeChange: NavNode => Unit, children: NavMgrState => ReactElement)
   type State = NavMgrState
-  override def initialState = NavMgrState(Nil, ChildSelection.Direct, Set(), false, false)
+  override def initialState =
+    NavMgrState(Nil, ChildSelection.Direct, Set(NonEmpty), fullPath = false, aggregate = false)
   override def render(): ReactElement = props.children(state)
 
   def setFullPath(enabled: Boolean) =
