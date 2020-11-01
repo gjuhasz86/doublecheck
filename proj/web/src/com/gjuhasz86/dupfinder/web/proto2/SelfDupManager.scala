@@ -56,7 +56,7 @@ case class SelfDupMgrState(loading: Boolean, rootSet: Set[String], nodes: List[N
 
   private def fetchNodes(roots: List[Node]): Unit = {
     setState(_.copy(loading = true))
-    FetchUtils.postBackend("dups", roots.map(_.hash).asJson.noSpaces) { res =>
+    FetchUtils.postBackend("dups2", roots.map(_.hash).asJson.noSpaces) { res =>
       val Right(nodes) = decode[List[Node]](res)
       setState(_.copy(loading = false, rootSet = roots.map(_.path).toSet, nodes = nodes.sortBy(_.path)))
     }

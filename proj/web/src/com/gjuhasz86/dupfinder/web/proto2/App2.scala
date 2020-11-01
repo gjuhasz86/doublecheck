@@ -149,13 +149,14 @@ import scala.collection.decorators._
                       onMouseDown := { _ => selMgr.current.dragFrom(node) },
                       onMouseEnter := { case e if e.buttons == 1 => selMgr.current.dragOn(node) case _ => },
                       onMouseLeave := { case e if e.buttons == 1 => selMgr.current.dragOn(node) case _ => },
-                      onContextMenu := { e =>
+                      onContextMenu := { case e if !(e.shiftKey && e.ctrlKey) =>
                         e.preventDefault()
                         if (selMgrState.selected.isEmpty) {
                           selMgr.current.add(node)
                         }
                         ctxMenu.current.style = s"top: ${e.pageY}px; left:${e.pageX}px;"
                         setState(_.copy(ctxMenuActive = true))
+                      case e =>
                       }
                     )(
                       td(node.ntype),

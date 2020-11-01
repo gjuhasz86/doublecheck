@@ -1,6 +1,7 @@
 package com.gjuhasz86.dupfinder.web
 
 import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.auto._
 import io.circe.parser._
 import io.circe.syntax._
 import slinky.core._
@@ -42,7 +43,7 @@ case class DupListState(roots: List[Node], rawPaths: List[String], aggr: Boolean
   override def render(): ReactElement = props.children(state)
 
   case class Props(children: DupListState => ReactElement)
-  override def initialState: State = DupListState(Nil, Nil, false)
+  override def initialState: State = DupListState(Nil, Nil, aggr = false)
 
   def setAggr(aggr: Boolean) =
     setState(_.copy(aggr = aggr))
@@ -64,8 +65,8 @@ case class DupListState(roots: List[Node], rawPaths: List[String], aggr: Boolean
 
   def fetchDups(hashes: List[String]): Unit =
     FetchUtils.postBackend("dups", hashes.asJson.noSpaces) { res =>
-      val Right(dups) = decode[List[String]](res)
-      setState(_.copy(rawPaths = dups.sorted))
+      val Right(dups) = decode[List[Node]](res)
+      setState(_.copy(rawPaths = dups.map(_.path).sorted))
     }
 
 }

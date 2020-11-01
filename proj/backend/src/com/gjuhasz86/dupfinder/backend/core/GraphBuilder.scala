@@ -1,10 +1,13 @@
 package com.gjuhasz86.dupfinder.backend.core
 
+import java.nio.file.Paths
+
 import better.files._
 import com.gjuhasz86.dupfinder.backend.core.Utils._
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
+
 import scala.annotation.tailrec
 
 class GraphBuilder(nodesFile: File, hashFile: File) {
@@ -102,6 +105,7 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
   }
 
   private def allChildren(nodes: List[Node]): Set[Node] = {
+    @tailrec
     def loop(acc: Set[Node], unvisited: List[Node]): Set[Node] = unvisited match {
       case Nil => acc
       case head :: rest if acc.contains(head) => loop(acc, rest)
@@ -117,6 +121,8 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
       .map(nodesByPath)
       .flatMap(allParents)
 
-  def allParents(node: Node): List[Node] =
-    node.path.toFile.path.allParents.map(_.pathAsString).map(nodesByPath)
+  def allParents(node: Node): List[Node] = {
+    val segments = Paths.get(node.path)
+    (1 to segments.getNameCount).map(segments.subpath(0, _).toString).map(nodesByPath).toList
+  }
 }
