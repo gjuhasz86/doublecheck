@@ -1,5 +1,6 @@
 package com.gjuhasz86.dupfinder.web.proto2
 
+import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Empty
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasDups
@@ -28,14 +29,13 @@ import slinky.core.facade.ReactRef
 import slinky.web.html._
 
 import scala.collection.decorators._
-import scala.scalajs.js.Dynamic.literal
 
 @react class App2 extends Component {
   implicit private val customConfig: Configuration = Configuration.default.withDefaults
 
   def fetchRoot(): Unit =
-    FetchUtils.getBackend("root") { res =>
-      val Right(root) = decode[Node](res)
+    FetchUtils.getBackend("rootLite") { res =>
+      val Right(root) = decode[NodeLite](res)
       navMgr.current.root(root)
     }
 
@@ -180,7 +180,7 @@ import scala.scalajs.js.Dynamic.literal
                       )(if (navMgrState.fullPath) node.path else node.name),
                       td(node.childCount),
                       td(node.dummyCount),
-                      td(node.stats.getOrElse[Int]("F", 0)),
+                      td(node.childFileCount),
                       td(node.dupCount),
                       td(node.extDupCount),
                       td(node.selfDupCount)

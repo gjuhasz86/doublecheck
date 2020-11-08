@@ -2,6 +2,8 @@ package com.gjuhasz86.dupfinder.backend.core
 
 import better.files._
 import com.gjuhasz86.dupfinder.backend.core.Utils._
+import com.gjuhasz86.dupfinder.shared.NodeLite
+import com.gjuhasz86.dupfinder.shared.Stats
 
 case class Node(ntype: NodeType, path: String, size: Long, hash: String)(val children: List[Node], private val pathsByHash: Map[String, List[String]]) {
   val name = path.toFile.name

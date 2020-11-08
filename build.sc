@@ -7,7 +7,6 @@ trait Commmon extends ScalaModule {
 object proj extends Module {
   object shared extends ScalaJSModule with Commmon {
     override def scalaJSVersion = "1.3.0"
-
   }
 
   object backend extends ScalaModule with Commmon {

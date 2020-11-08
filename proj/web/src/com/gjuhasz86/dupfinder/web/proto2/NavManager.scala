@@ -1,10 +1,10 @@
 package com.gjuhasz86.dupfinder.web.proto2
 
+import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter._
 import com.gjuhasz86.dupfinder.shared.request.ChildSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
-import com.gjuhasz86.dupfinder.web.Node
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import io.circe.parser._
@@ -14,9 +14,9 @@ import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
 
 
-case class NavNode(nodes: List[Node], selection: ChildSelection, filter: Set[ChildFilter])
+case class NavNode(nodes: List[NodeLite], selection: ChildSelection, filter: Set[ChildFilter])
 object NavNode {
-  val default = NavNode(List(Node.Empty), ChildSelection.Direct, Set())
+  val default = NavNode(List(NodeLite.Empty), ChildSelection.Direct, Set())
 }
 
 
@@ -70,7 +70,7 @@ object NavMgrState {
   def remFilter(cf: ChildFilter) =
     setState(_.copy(filter = state.filter - cf))
 
-  def root(node: Node) = setState(_.copy(parents = List(state.current.copy(nodes = List(node)))))
+  def root(node: NodeLite) = setState(_.copy(parents = List(state.current.copy(nodes = List(node)))))
   def up(n: Int = 1) = {
     val newParents = state.parents.drop(n min (state.parents.size - 1))
     setState(_.copy(
@@ -82,13 +82,13 @@ object NavMgrState {
   }
 
   def downSingle(
-    node: Node,
+    node: NodeLite,
     sel: ChildSelection = state.selection,
     filter: Set[ChildFilter] = state.filter): Unit
   = down(List(node), sel, filter)
 
   def down(
-    nodes: List[Node],
+    nodes: List[NodeLite],
     sel: ChildSelection = state.selection,
     filters: Set[ChildFilter] = state.filter): Unit
   = {

@@ -1,7 +1,7 @@
 package com.gjuhasz86.dupfinder.web.proto2
 
+import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.web.FetchUtils
-import com.gjuhasz86.dupfinder.web.Node
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import io.circe.parser._
@@ -13,7 +13,7 @@ import slinky.core.facade.ReactElement
 import scala.annotation.tailrec
 
 case class AggrNode(path: String, hashes: Set[String])
-case class SelfDupMgrState(loading: Boolean, rootSet: Set[String], nodes: List[Node]) {
+case class SelfDupMgrState(loading: Boolean, rootSet: Set[String], nodes: List[NodeLite]) {
 
   private def allParents(path: String) = {
     val segments = path.split("/").toList
@@ -29,7 +29,7 @@ case class SelfDupMgrState(loading: Boolean, rootSet: Set[String], nodes: List[N
         .filter(n => valids.contains(n.path))
         .flatMap(n => allParents(n.path).map(p => p -> n.hash))
         .groupBy { case (p, _) => p }
-        .map { case (p, hs) => AggrNode(p, hs.map(_._2).toSet) }
+        .map { case (p, hs) => AggrNode(p, hs.flatMap(_._2).toSet) }
         .toList
         .sortBy(_.path)
 
@@ -54,13 +54,13 @@ case class SelfDupMgrState(loading: Boolean, rootSet: Set[String], nodes: List[N
   override def initialState = SelfDupMgrState(loading = false, Set(), Nil)
   override def render(): ReactElement = props.children(state)
 
-  def loadChildren(roots: List[Node]) =
+  def loadChildren(roots: List[NodeLite]) =
     fetchNodes(roots)
 
-  private def fetchNodes(roots: List[Node]): Unit = {
+  private def fetchNodes(roots: List[NodeLite]): Unit = {
     setState(_.copy(loading = true))
     FetchUtils.postBackend("dups2", roots.map(_.hash).asJson.noSpaces) { res =>
-      val Right(nodes) = decode[List[Node]](res)
+      val Right(nodes) = decode[List[NodeLite]](res)
       setState(_.copy(loading = false, rootSet = roots.map(_.path).toSet, nodes = nodes.sortBy(_.path)))
     }
   }

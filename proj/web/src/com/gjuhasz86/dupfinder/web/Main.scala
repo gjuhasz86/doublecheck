@@ -5,6 +5,7 @@ import slinky.web.ReactDOM
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 
+
 object Main {
 
   @JSExportTopLevel("main")
@@ -24,5 +25,6 @@ object Main {
 
     //    ReactDOM.render(App(), container)
     ReactDOM.render(proto2.App2(), container)
+    //    ReactDOM.render(proto2.DebugComp(), container)
   }
 }

@@ -1,5 +1,6 @@
 package com.gjuhasz86.dupfinder.web.proto2
 
+import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
@@ -18,17 +19,17 @@ import io.circe.parser._
 import io.circe.syntax._
 
 
-case class SelectionMgrState(lastSelected: Int, selected: Set[Node], dragOp: SelectionManagerModels.SelCmd.Op)
+case class SelectionMgrState(lastSelected: Int, selected: Set[NodeLite], dragOp: SelectionManagerModels.SelCmd.Op)
 @react class SelectionManager extends Component {
   import SelectionManagerModels._
   import SelectionManagerModels.SelCmd._
 
-  case class Props(items: List[Node], children: SelectionMgrState => ReactElement)
+  case class Props(items: List[NodeLite], children: SelectionMgrState => ReactElement)
   type State = SelectionMgrState
   override def initialState = SelectionMgrState(0, Set(), SelCmd.Op.Add)
   override def render(): ReactElement = props.children(state)
 
-  def makeSelection(cmd: SelCmd[Node]) = (cmd match {
+  def makeSelection(cmd: SelCmd[NodeLite]) = (cmd match {
     case cmd@All(_) => cmd.normalize(props.items, state.lastSelected)
     case cmd@ByIdx(_, _) => cmd.normalize(props.items)
     case cmd@ByItem(_, _) => cmd.normalize(props.items)
@@ -44,16 +45,16 @@ case class SelectionMgrState(lastSelected: Int, selected: Set[Node], dragOp: Sel
   }
 
   def clear() = setState(_.copy(lastSelected = 0, selected = Set()))
-  def cleanAdd(node: Node) = makeSelection(ByItem(Op.CleanAdd, node))
+  def cleanAdd(node: NodeLite) = makeSelection(ByItem(Op.CleanAdd, node))
   def selectAll() = makeSelection(All(Op.Add))
-  def add(node: Node) = makeSelection(ByItem(Op.Add, node))
-  def rem(node: Node) = makeSelection(ByItem(Op.Rem, node))
-  def toggle(node: Node) = makeSelection(ByItem(Op.Toggle, node))
+  def add(node: NodeLite) = makeSelection(ByItem(Op.Add, node))
+  def rem(node: NodeLite) = makeSelection(ByItem(Op.Rem, node))
+  def toggle(node: NodeLite) = makeSelection(ByItem(Op.Toggle, node))
   def addRange(idx: Int) = makeSelection(ByRangeCont(Op.Add, idx))
 
-  def dragFrom(node: Node) = if (state.selected.contains(node)) setDrag(Op.Rem) else setDrag(Op.Add)
+  def dragFrom(node: NodeLite) = if (state.selected.contains(node)) setDrag(Op.Rem) else setDrag(Op.Add)
   def setDrag(op: Op) = setState(_.copy(dragOp = op))
-  def dragOn(node: Node) = makeSelection(ByItem(state.dragOp, node))
+  def dragOn(node: NodeLite) = makeSelection(ByItem(state.dragOp, node))
 }
 
 object SelectionManagerModels {
