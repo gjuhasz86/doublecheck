@@ -4,9 +4,9 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.gjuhasz86.dupfinder.backend.core.GraphBuilder
 import com.gjuhasz86.dupfinder.backend.core.Node
-import com.gjuhasz86.dupfinder.backend.core.NodeType
 import com.gjuhasz86.dupfinder.backend.server.Syntax._
 import com.gjuhasz86.dupfinder.shared.NodeLite
+import com.gjuhasz86.dupfinder.shared.NodeType
 import com.gjuhasz86.dupfinder.shared.Stat
 import com.gjuhasz86.dupfinder.shared.Stats
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
@@ -30,7 +30,7 @@ class Routes(staticPath: String, graphBuilder: GraphBuilder) extends LazyLogging
       _.get("root") {
         complete(graphBuilder.root)
       }.get("rootLite") {
-        complete(toLite(graphBuilder.root))
+        complete(graphBuilder.root.toLite)
       }.post("children") {
         entity(as[String]) { path =>
           println(s"Children of [$path]")
@@ -41,14 +41,14 @@ class Routes(staticPath: String, graphBuilder: GraphBuilder) extends LazyLogging
       }.post("search") {
         entity(as[NodeReq]) { req =>
           println(s"Searching [$req]")
-          val res = graphBuilder.search(req)
+          val res = graphBuilder.search(req).map(n => graphBuilder.nodesByPath(n.path))
           println(s"Returning [${res.size}]")
           complete(res.toList)
         }
-      }.post("searchLight") {
+      }.post("searchLite") {
         entity(as[NodeReq]) { req =>
           println(s"Searching [$req]")
-          val res = graphBuilder.search(req).map(toLite)
+          val res = graphBuilder.search(req)
           println(s"Returning [${res.size}]")
           complete(res.toList)
         }
@@ -60,9 +60,9 @@ class Routes(staticPath: String, graphBuilder: GraphBuilder) extends LazyLogging
           complete(res)
         }
       }.post("dups2") {
-        entity(as[List[String]]) { hashes =>
-          println(s"Dups of [$hashes]")
-          val res = graphBuilder.dups(hashes).map(toLite)
+        entity(as[List[NodeLite]]) { nodes =>
+          println(s"Dups of [$nodes]")
+          val res = graphBuilder.dups(nodes)
           println(s"Returning [${res.size}]")
           complete(res)
         }
@@ -90,27 +90,6 @@ class Routes(staticPath: String, graphBuilder: GraphBuilder) extends LazyLogging
 
   }
 
-  def toLite(node: Node) = {
-    import node._
-
-    import io.circe.syntax._
-
-    import com.gjuhasz86.dupfinder.shared.Stat._
-    val res: NodeLite = NodeLite(path,
-      Stats.empty
-        .updated(NType(ntype.short))
-        .updated(Name(name))
-        .updated(Hash(hash))
-        .updated(Size(size))
-        .updated(DupCount(dupCount))
-        .updated(ExtDupCount(extDupCount))
-        .updated(DummyCount(dummyCount))
-        .updated(ChildCount(childCount))
-        .updated(SelfDupCount(selfDupCount))
-        .updated(ChildFileCount(stats.getOrElse(NodeType.Fil(true), 0)))
-    )
-    res.asJson
-  }
 }
 
 

@@ -3,8 +3,10 @@ package com.gjuhasz86.dupfinder.web.proto2
 import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter._
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DeepChildren
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import io.circe.parser._
@@ -14,13 +16,13 @@ import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
 
 
-case class NavNode(nodes: List[NodeLite], selection: ChildSelection, filter: Set[ChildFilter])
+case class NavNode(nodes: List[NodeLite], selection: NodeSelection, filter: Set[ChildFilter])
 object NavNode {
-  val default = NavNode(List(NodeLite.Empty), ChildSelection.Direct, Set())
+  val default = NavNode(List(NodeLite.Empty), NodeSelection.DirectChildren, Set())
 }
 
 
-case class NavMgrState(parents: List[NavNode], selection: ChildSelection, filter: Set[ChildFilter], fullPath: Boolean, aggregate: Boolean) {
+case class NavMgrState(parents: List[NavNode], selection: NodeSelection, filter: Set[ChildFilter], fullPath: Boolean, aggregate: Boolean) {
   def current: NavNode = parents.headOption.getOrElse(NavNode.default)
 
   def withFilter(cf: ChildFilter) =
@@ -43,7 +45,7 @@ object NavMgrState {
   case class Props(onCurrentNodeChange: NavNode => Unit, children: NavMgrState => ReactElement)
   type State = NavMgrState
   override def initialState =
-    NavMgrState(Nil, ChildSelection.Direct, Set(NonEmpty), fullPath = false, aggregate = false)
+    NavMgrState(Nil, NodeSelection.DirectChildren, Set(NonEmpty), fullPath = false, aggregate = false)
   override def render(): ReactElement = props.children(state)
 
   def setFullPath(enabled: Boolean) =
@@ -53,12 +55,12 @@ object NavMgrState {
     setState(_.copy(aggregate = enabled))
 
   def toggleSelection() =
-    if (state.selection == ChildSelection.Deep)
-      setSelection(ChildSelection.Direct)
+    if (state.selection == DeepChildren)
+      setSelection(NodeSelection.DirectChildren)
     else
-      setSelection(ChildSelection.Deep)
+      setSelection(DeepChildren)
 
-  def setSelection(sel: ChildSelection) =
+  def setSelection(sel: NodeSelection) =
     setState(_.copy(selection = sel))
 
   def toggleFilter(cf: ChildFilter) =
@@ -77,19 +79,19 @@ object NavMgrState {
       parents = newParents,
       selection = state.current.selection,
       filter = state.current.filter,
-      fullPath = newParents.head.selection == ChildSelection.Deep
+      fullPath = newParents.head.selection == DeepChildren || newParents.head.selection == DupNodes
     ))
   }
 
   def downSingle(
     node: NodeLite,
-    sel: ChildSelection = state.selection,
+    sel: NodeSelection = state.selection,
     filter: Set[ChildFilter] = state.filter): Unit
   = down(List(node), sel, filter)
 
   def down(
     nodes: List[NodeLite],
-    sel: ChildSelection = state.selection,
+    sel: NodeSelection = state.selection,
     filters: Set[ChildFilter] = state.filter): Unit
   = {
     val ns = filters.toList.foldLeft(state)(_.withFilter(_))
@@ -99,7 +101,7 @@ object NavMgrState {
   def down(root: NavNode): Unit =
     setState(_.copy(
       parents = root :: state.parents,
-      fullPath = root.selection == ChildSelection.Deep
+      fullPath = root.selection == DeepChildren || root.selection == DupNodes
     ))
 
   override def componentDidUpdate(prevProps: Props, prevState: State) =

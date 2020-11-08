@@ -3,6 +3,7 @@ package com.gjuhasz86.dupfinder.backend.core
 import better.files._
 import com.gjuhasz86.dupfinder.backend.core.Utils._
 import com.gjuhasz86.dupfinder.shared.NodeLite
+import com.gjuhasz86.dupfinder.shared.NodeType
 import com.gjuhasz86.dupfinder.shared.Stats
 
 case class Node(ntype: NodeType, path: String, size: Long, hash: String)(val children: List[Node], private val pathsByHash: Map[String, List[String]]) {
@@ -21,4 +22,21 @@ case class Node(ntype: NodeType, path: String, size: Long, hash: String)(val chi
 
   def externalDupPaths = externalDups.flatten.filter(_.startsWith(path))
 
+
+  def toLite = {
+    import com.gjuhasz86.dupfinder.shared.Stat._
+    NodeLite(path,
+      Stats.empty
+        .updated(NType(ntype))
+        .updated(Name(name))
+        .updated(Hash(hash))
+        .updated(Size(size))
+        .updated(DupCount(dupCount))
+        .updated(ExtDupCount(extDupCount))
+        .updated(DummyCount(dummyCount))
+        .updated(ChildCount(childCount))
+        .updated(SelfDupCount(selfDupCount))
+        .updated(ChildFileCount(stats.getOrElse(NodeType.Fil(true), 0)))
+    )
+  }
 }

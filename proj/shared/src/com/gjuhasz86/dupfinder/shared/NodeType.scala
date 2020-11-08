@@ -1,4 +1,4 @@
-package com.gjuhasz86.dupfinder.backend.core
+package com.gjuhasz86.dupfinder.shared
 
 sealed trait NodeType
 

@@ -1,11 +1,16 @@
 package com.gjuhasz86.dupfinder.backend.core
 
+import java.nio.file.Path
 import java.nio.file.Paths
 
 import better.files._
 import com.gjuhasz86.dupfinder.backend.core.Utils._
+import com.gjuhasz86.dupfinder.shared.NodeLite
+import com.gjuhasz86.dupfinder.shared.NodeType
+import com.gjuhasz86.dupfinder.shared.Stat.DupCount
+import com.gjuhasz86.dupfinder.shared.Stat.LeafDupCount
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
 
 import scala.annotation.tailrec
@@ -73,36 +78,37 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
 
     val rootNodes = req.roots.flatMap(nodesByPath.get)
     val selected = req.selection match {
-      case ChildSelection.Direct => rootNodes.flatMap(_.children)
-      case ChildSelection.Deep => allChildren(rootNodes.toList)
+      case NodeSelection.DirectChildren => rootNodes.flatMap(_.children).map(_.toLite)
+      case NodeSelection.DeepChildren => allChildren(rootNodes.toList).map(_.toLite)
+      case NodeSelection.DupNodes => dupsStr(req.roots.toList)
     }
 
     selected.filter { node =>
       req.filters.forall {
         case ChildFilter.NonEmpty =>
-          node.ntype match {
+          node.nodetype match {
             case NodeType.Fil(_) => node.size != 0
             case _ => true
           }
         case ChildFilter.Empty =>
-          node.ntype match {
+          node.nodetype match {
             case NodeType.Fil(_) => node.size == 0
             case _ => true
           }
         case ChildFilter.NodeTypeIn(ntypes) =>
-          ntypes.contains(node.ntype.short)
+          ntypes.contains(node.ntype)
         case ChildFilter.HasDups =>
-          pathsByHash.getOrElse(node.hash, Nil).size > 1
+          pathsByHash.getOrElse(node.hash.get, Nil).size > 1
         case ChildFilter.HasExtDups =>
-          if (pathsByHash.getOrElse(node.hash, Nil).size > 1) {
+          if (pathsByHash.getOrElse(node.hash.get, Nil).size > 1) {
             println(node)
-            pathsByHash.getOrElse(node.hash, Nil)
+            pathsByHash.getOrElse(node.hash.get, Nil)
               .foreach { path =>
                 println(path)
                 println(req.roots.exists(root => !path.startsWith(root)))
               }
           }
-          pathsByHash.getOrElse(node.hash, Nil)
+          pathsByHash.getOrElse(node.hash.get, Nil)
             .filterNot(_ == node.path)
             .exists(path => req.roots.exists(root => !path.startsWith(root)))
       }
@@ -120,7 +126,36 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
     loop(Set(), nodes.flatMap(_.children))
   }
 
-  def dups(hashes: List[String]) =
+  def dups(roots: List[NodeLite]) =
+    dupsStr(roots.map(_.path))
+
+  def dupsStr(roots: List[String]) = {
+    val rootSet = roots.map(Paths.get(_)).toSet
+
+    val leafSet =
+      roots
+        .map(hashesByPath)
+        .distinct
+        .flatMap(pathsByHash.get)
+        .flatten
+        .map(Paths.get(_))
+        .toSet
+
+    leafSet
+      .flatMap(allParents)
+      .map { node =>
+        val leafDupCount = leafSet.count(_.startsWith(node.path))
+        val dupCount = rootSet.count(p => p.startsWith(node.path))
+        val lnode = node.toLite
+        lnode.copy(stats =
+          lnode.stats
+            .updated(LeafDupCount(leafDupCount))
+            .updated(DupCount(dupCount))
+        )
+      }
+  }
+
+  def dups0(hashes: List[String]) =
     hashes.distinct
       .flatMap(pathsByHash.get)
       .flatten.distinct
@@ -128,8 +163,13 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
       .flatMap(allParents)
       .distinct
 
-  def allParents(node: Node): List[Node] = {
-    val segments = Paths.get(node.path)
+  def allParents(node: Node): List[Node] =
+    allParents(node.path)
+
+  def allParents(path: String): List[Node] =
+    allParents(Paths.get(path))
+
+  def allParents(segments: Path): List[Node] = {
     (1 to segments.getNameCount).map(segments.subpath(0, _).toString).map(nodesByPath).toList
   }
 }

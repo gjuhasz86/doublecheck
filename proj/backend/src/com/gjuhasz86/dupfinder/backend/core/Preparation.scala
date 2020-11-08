@@ -4,7 +4,8 @@ import better.files._
 
 import scala.annotation.tailrec
 import com.gjuhasz86.dupfinder.backend.core.Utils._
-import com.gjuhasz86.dupfinder.backend.core.NodeType._
+import com.gjuhasz86.dupfinder.shared.NodeType
+import com.gjuhasz86.dupfinder.shared.NodeType._
 
 // Generates a list of files with metadataas nodes.csv
 // from a given directory (passed in as a command line argument)

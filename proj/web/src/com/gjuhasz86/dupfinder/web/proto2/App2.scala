@@ -7,10 +7,11 @@ import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasExtDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NodeTypeIn
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NonEmpty
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection.Deep
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection.Direct
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DeepChildren
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DirectChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
 import com.gjuhasz86.dupfinder.web.FetchUtils
 import com.gjuhasz86.dupfinder.web.Node
 import io.circe.generic.extras.Configuration
@@ -74,12 +75,12 @@ import scala.collection.decorators._
                 onClick := { _ => navMgr.current.setFullPath(false); chldMgr.current.sortByName() }
               )("[SHORT]"),
               div(
-                className := (if (navMgrState.selection == Direct) "textBtn active" else "textBtn"),
-                onClick := (_ => navMgr.current.setSelection(Direct))
+                className := (if (navMgrState.selection == DirectChildren) "textBtn active" else "textBtn"),
+                onClick := (_ => navMgr.current.setSelection(DirectChildren))
               )("[DIRECT]"),
               div(
-                className := (if (navMgrState.selection == Deep) "textBtn active" else "textBtn"),
-                onClick := (_ => navMgr.current.setSelection(Deep))
+                className := (if (navMgrState.selection == DeepChildren) "textBtn active" else "textBtn"),
+                onClick := (_ => navMgr.current.setSelection(DeepChildren))
               )("[DEEP]"),
               div(
                 className := (if (navMgrState.filter.contains(NodeTypeIn(Set("F")))) "textBtn active" else "textBtn"),
@@ -125,10 +126,10 @@ import scala.collection.decorators._
                     onClick := (_ => navMgr.current.up(idx))
                   )(navNode.nodes match {
                     case node :: Nil =>
-                      val deepMark = if (navNode.selection == Deep) " [*]" else ""
+                      val deepMark = if (navNode.selection == DeepChildren) " [*]" else ""
                       s"${node.name}$deepMark"
                     case nodes =>
-                      val deepMark = if (navNode.selection == Deep) "*" else ""
+                      val deepMark = if (navNode.selection == DeepChildren) "*" else ""
                       s"[MULTI:${nodes.size}$deepMark]"
                   })
                 }.intersperse(
@@ -206,25 +207,26 @@ import scala.collection.decorators._
                 div(
                   className := "item selectable",
                   onClick := { _ =>
-                    navMgr.current.down(selMgrState.selected.toList, Deep, Set(ChildFilter.NodeTypeIn(Set("F"))))
+                    navMgr.current.down(selMgrState.selected.toList, DeepChildren, Set(ChildFilter.NodeTypeIn(Set("F"))))
                   }
                 )("CHILDREN"),
                 div(
                   className := "item selectable",
                   onClick := { _ =>
-                    navMgr.current.down(selMgrState.selected.toList, Deep, Set(HasDups, NodeTypeIn(Set("F"))))
+                    navMgr.current.down(selMgrState.selected.toList, DeepChildren, Set(HasDups, NodeTypeIn(Set("F"))))
                   }
                 )("DUPS"),
                 div(
                   className := "item selectable",
                   onClick := { _ =>
-                    navMgr.current.down(selMgrState.selected.toList, Deep, Set(HasExtDups, NodeTypeIn(Set("F"))))
+                    navMgr.current.down(selMgrState.selected.toList, DeepChildren, Set(HasExtDups, NodeTypeIn(Set("F"))))
                   }
                 )("EXT DUPS"),
                 div(
                   className := "item selectable",
                   onClick := { _ =>
-                    sdMgr.current.loadChildren(selMgrState.selected.toList)
+                    navMgr.current.down(selMgrState.selected.toList, DupNodes, Set())
+                    //                    sdMgr.current.loadChildren(selMgrState.selected.toList)
                   }
                 )(s"DOUBLES (${selMgrState.selected.map(_.hash).size})"),
               )

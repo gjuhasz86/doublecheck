@@ -3,7 +3,7 @@ package com.gjuhasz86.dupfinder.web.proto2
 import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.Stat
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import com.gjuhasz86.dupfinder.web.FetchUtils
 import com.gjuhasz86.dupfinder.web.Node
@@ -27,7 +27,7 @@ import io.circe.syntax._
   override def initialState: State = State(Nil)
 
   private def fetchNodes(req: NodeReq): Unit = {
-    FetchUtils.postBackend("searchLight", req.asJson.noSpaces) { res =>
+    FetchUtils.postBackend("searchLite", req.asJson.noSpaces) { res =>
       val Right(nodes) = decode[List[NodeLite]](res)
       setState(_.copy(nodes = nodes))
     }
@@ -35,7 +35,7 @@ import io.circe.syntax._
 
 
   override def componentDidMount(): Unit =
-    fetchNodes(NodeReq(Set("___PRESORTED___"), ChildSelection.Direct, Set()))
+    fetchNodes(NodeReq(Set("___PRESORTED___"), NodeSelection.DirectChildren, Set()))
 
   def render(): ReactElement = {
     div(

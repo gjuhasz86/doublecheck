@@ -46,7 +46,7 @@ case class ChildrenMgrState(loading: Boolean, children: List[NodeLite], sorting:
 
   private def fetchNodes(req: NodeReq): Unit = {
     setState(_.copy(loading = true))
-    FetchUtils.postBackend("searchLight", req.asJson.noSpaces) { res =>
+    FetchUtils.postBackend("searchLite", req.asJson.noSpaces) { res =>
       val Right(nodes) = decode[List[NodeLite]](res)
       setState(_.copy(loading = false, children = nodes.sorted(state.sorting), limit = 1000))
     }

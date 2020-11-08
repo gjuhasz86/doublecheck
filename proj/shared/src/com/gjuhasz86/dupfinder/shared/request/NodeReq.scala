@@ -1,11 +1,12 @@
 package com.gjuhasz86.dupfinder.shared.request
 
-case class NodeReq(roots: Set[String], selection: ChildSelection, filters: Set[ChildFilter])
+case class NodeReq(roots: Set[String], selection: NodeSelection, filters: Set[ChildFilter])
 
-sealed trait ChildSelection
-object ChildSelection {
-  case object Direct extends ChildSelection
-  case object Deep extends ChildSelection
+sealed trait NodeSelection
+object NodeSelection {
+  case object DirectChildren extends NodeSelection
+  case object DeepChildren extends NodeSelection
+  case object DupNodes extends NodeSelection
 }
 
 sealed trait ChildFilter

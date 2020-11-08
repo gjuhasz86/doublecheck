@@ -2,7 +2,7 @@ package com.gjuhasz86.dupfinder.web.proto2
 
 import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import com.gjuhasz86.dupfinder.web.FetchUtils
 import com.gjuhasz86.dupfinder.web.Node

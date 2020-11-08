@@ -1,7 +1,7 @@
 package com.gjuhasz86.dupfinder.web
 
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -12,7 +12,7 @@ import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
 
 case class NavState(
-  roots: List[Node], childSelection: ChildSelection, filter: Set[ChildFilter],
+  roots: List[Node], childSelection: NodeSelection, filter: Set[ChildFilter],
   dirty: Boolean, autoFetch: Boolean, nodes: List[Node])
 @react class NavManager extends Component {
 
@@ -21,12 +21,13 @@ case class NavState(
   override def render(): ReactElement = props.children(state)
 
   case class Props(children: NavState => ReactElement)
-  override def initialState: State = NavState(Nil, ChildSelection.Direct, Set(), false, false, Nil)
+  override def initialState: State =
+    NavState(Nil, NodeSelection.DirectChildren, Set(), dirty = false, autoFetch = false, Nil)
 
   def setRoots(roots: List[Node]) =
     setState(_.copy(roots = roots, dirty = true))
 
-  def setChildSelection(cs: ChildSelection) =
+  def setChildSelection(cs: NodeSelection) =
     setState(_.copy(childSelection = cs, dirty = cs != state.childSelection))
 
   def addFilter(cf: ChildFilter) =

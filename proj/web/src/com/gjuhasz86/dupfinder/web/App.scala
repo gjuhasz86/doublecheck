@@ -1,7 +1,7 @@
 package com.gjuhasz86.dupfinder.web
 
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
-import com.gjuhasz86.dupfinder.shared.request.ChildSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import io.circe.parser._
@@ -110,15 +110,15 @@ import slinky.web.html._
               navMgr.current.setRoots(mainNodeList.current.getSelected)
             })
           )("[LINK]"),
-          if (nState.childSelection == ChildSelection.Direct)
+          if (nState.childSelection == NodeSelection.DirectChildren)
             div(
               className := "textBtn",
-              onClick := (_ => navMgr.current.setChildSelection(ChildSelection.Deep))
+              onClick := (_ => navMgr.current.setChildSelection(NodeSelection.DeepChildren))
             )("[DEEP]")
           else
             div(
               className := "textBtn",
-              onClick := (_ => navMgr.current.setChildSelection(ChildSelection.Direct))
+              onClick := (_ => navMgr.current.setChildSelection(NodeSelection.DirectChildren))
             )("[DIRECT]"),
           div(
             className := "textBtn",
