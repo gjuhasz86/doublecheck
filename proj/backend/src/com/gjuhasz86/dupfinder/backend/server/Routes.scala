@@ -60,9 +60,9 @@ class Routes(staticPath: String, graphBuilder: GraphBuilder) extends LazyLogging
           complete(res)
         }
       }.post("dups2") {
-        entity(as[List[NodeLite]]) { nodes =>
-          println(s"Dups of [$nodes]")
-          val res = graphBuilder.dups(nodes)
+        entity(as[List[String]]) { hashes =>
+          println(s"Dups of [$hashes]")
+          val res = graphBuilder.dups0(hashes).map(_.toLite)
           println(s"Returning [${res.size}]")
           complete(res)
         }

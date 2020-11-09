@@ -141,16 +141,16 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
         .map(Paths.get(_))
         .toSet
 
+    val leafHashes: Set[String] = (leafSet -- rootSet).map(n => nodesByPath(n.toString).hash)
+
     leafSet
       .flatMap(allParents)
       .map { node =>
-        val leafDupCount = leafSet.count(_.startsWith(node.path))
-        val dupCount = rootSet.count(p => p.startsWith(node.path))
+        val leafDupCount = node.hashes.toSet.intersect(leafHashes).size
         val lnode = node.toLite
         lnode.copy(stats =
           lnode.stats
             .updated(LeafDupCount(leafDupCount))
-            .updated(DupCount(dupCount))
         )
       }
   }

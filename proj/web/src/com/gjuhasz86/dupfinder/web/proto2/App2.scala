@@ -141,7 +141,7 @@ import scala.collection.decorators._
                 className := (if (chldMgrState.loading) "nodeTable loading" else "nodeTable")
               )(
                 thead(
-                  tr(td("typ"), td("hash"), td("name"), td("cld"), td("dmy"), td("nzf"), td("dup"), td("ext"), td("sdc"))
+                  tr(td("typ"), td("hash"), td("name"), td("cld"), td("dmy"), td("nzf"), td("dup"), td("ext"), td("sdc"), td("ldc"))
                 ),
                 tbody(
                   tr(
@@ -149,7 +149,7 @@ import scala.collection.decorators._
                     className := "nodeRow",
                     onDoubleClick := (_ => navMgr.current.up())
                   )(
-                    td("D"), td(""), td(".."), td("0"), td("0"), td("0"), td("0"), td("0"), td("0")
+                    td("D"), td(""), td(".."), td("0"), td("0"), td("0"), td("0"), td("0"), td("0"), td("0")
                   ),
                   chldMgrState.children.take(chldMgrState.limit).zipWithIndex.map { case (node, idx) =>
                     tr(
@@ -184,7 +184,8 @@ import scala.collection.decorators._
                       td(node.childFileCount),
                       td(node.dupCount),
                       td(node.extDupCount),
-                      td(node.selfDupCount)
+                      td(node.selfDupCount),
+                      td(node.leafDupCount)
                     )
                   }
                 )
@@ -226,7 +227,7 @@ import scala.collection.decorators._
                   className := "item selectable",
                   onClick := { _ =>
                     navMgr.current.down(selMgrState.selected.toList, DupNodes, Set())
-                    //                    sdMgr.current.loadChildren(selMgrState.selected.toList)
+                    sdMgr.current.loadChildren(selMgrState.selected.toList)
                   }
                 )(s"DOUBLES (${selMgrState.selected.map(_.hash).size})"),
               )
