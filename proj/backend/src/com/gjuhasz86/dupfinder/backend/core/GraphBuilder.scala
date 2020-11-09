@@ -7,11 +7,11 @@ import better.files._
 import com.gjuhasz86.dupfinder.backend.core.Utils._
 import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.NodeType
-import com.gjuhasz86.dupfinder.shared.Stat.DupCount
+import com.gjuhasz86.dupfinder.shared.Stat.Hashes
 import com.gjuhasz86.dupfinder.shared.Stat.LeafDupCount
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
-import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 
 import scala.annotation.tailrec
 
@@ -146,11 +146,12 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
     leafSet
       .flatMap(allParents)
       .map { node =>
-        val leafDupCount = node.hashes.toSet.intersect(leafHashes).size
+        val leafDupHashes = node.hashes.toSet.intersect(leafHashes)
         val lnode = node.toLite
         lnode.copy(stats =
           lnode.stats
-            .updated(LeafDupCount(leafDupCount))
+            .updated(Hashes(leafDupHashes))
+            .updated(LeafDupCount(leafDupHashes.size))
         )
       }
   }

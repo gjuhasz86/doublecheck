@@ -110,14 +110,14 @@ import scala.collection.decorators._
               //                className := (if (navMgrState.filter.contains(HasExtDups)) "textBtn active" else "textBtn"),
               //                onClick := (_ => navMgr.current.toggleFilter(HasExtDups))
               //              )("[EXTDUPS]"),
-              //              div(
-              //                className := (if (navMgrState.aggregate) "textBtn active" else "textBtn"),
-              //                onClick := (_ => navMgr.current.setAggregate(true))
-              //              )("[AGGR]"),
-              //              div(
-              //                className := (if (!navMgrState.aggregate) "textBtn active" else "textBtn"),
-              //                onClick := (_ => navMgr.current.setAggregate(false))
-              //              )("[NOAGGR]"),
+              div(
+                className := (if (navMgrState.aggregate) "textBtn active" else "textBtn"),
+                onClick := (_ => navMgr.current.setAggregate(true))
+              )("[AGGR]"),
+              div(
+                className := (if (!navMgrState.aggregate) "textBtn active" else "textBtn"),
+                onClick := (_ => navMgr.current.setAggregate(false))
+              )("[NOAGGR]"),
               div(className := "breadcrumbHolder")(
                 navMgrState.parents.zipWithIndex.reverse.map { case (navNode, idx) =>
                   div(
@@ -151,43 +151,44 @@ import scala.collection.decorators._
                   )(
                     td("D"), td(""), td(".."), td("0"), td("0"), td("0"), td("0"), td("0"), td("0"), td("0")
                   ),
-                  chldMgrState.children.take(chldMgrState.limit).zipWithIndex.map { case (node, idx) =>
-                    tr(
-                      key := node.path,
-                      className := (if (selMgrState.selected.contains(node)) "nodeRow selectedRow" else "nodeRow"),
-                      onDoubleClick := { case _ if node.ntype == "D" => navMgr.current.downSingle(node) case _ => },
-                      onClick := {
-                        case e if e.ctrlKey => selMgr.current.toggle(node)
-                        case e if e.shiftKey => selMgr.current.addRange(idx)
-                        case _ => selMgr.current.cleanAdd(node)
-                      },
-                      onMouseDown := { _ => selMgr.current.dragFrom(node) },
-                      onMouseEnter := { case e if e.buttons == 1 => selMgr.current.dragOn(node) case _ => },
-                      onMouseLeave := { case e if e.buttons == 1 => selMgr.current.dragOn(node) case _ => },
-                      onContextMenu := { case e if !(e.shiftKey && e.ctrlKey) =>
-                        e.preventDefault()
-                        if (selMgrState.selected.isEmpty) {
-                          selMgr.current.add(node)
+                  AggrManager(chldMgrState.children, navMgrState.aggregate)(agrMgrState =>
+                    agrMgrState.nodes.take(chldMgrState.limit).zipWithIndex.map { case (node, idx) =>
+                      tr(
+                        key := node.path,
+                        className := (if (selMgrState.selected.contains(node)) "nodeRow selectedRow" else "nodeRow"),
+                        onDoubleClick := { case _ if node.ntype == "D" => navMgr.current.downSingle(node) case _ => },
+                        onClick := {
+                          case e if e.ctrlKey => selMgr.current.toggle(node)
+                          case e if e.shiftKey => selMgr.current.addRange(idx)
+                          case _ => selMgr.current.cleanAdd(node)
+                        },
+                        onMouseDown := { _ => selMgr.current.dragFrom(node) },
+                        onMouseEnter := { case e if e.buttons == 1 => selMgr.current.dragOn(node) case _ => },
+                        onMouseLeave := { case e if e.buttons == 1 => selMgr.current.dragOn(node) case _ => },
+                        onContextMenu := { case e if !(e.shiftKey && e.ctrlKey) =>
+                          e.preventDefault()
+                          if (selMgrState.selected.isEmpty) {
+                            selMgr.current.add(node)
+                          }
+                          ctxMenu.current.style = s"top: ${e.pageY}px; left:${e.pageX}px;"
+                          setState(_.copy(ctxMenuActive = true))
+                        case e =>
                         }
-                        ctxMenu.current.style = s"top: ${e.pageY}px; left:${e.pageX}px;"
-                        setState(_.copy(ctxMenuActive = true))
-                      case e =>
-                      }
-                    )(
-                      td(node.ntype),
-                      td(node.hash),
-                      td(
-                        title := (if (navMgrState.fullPath) None else Some(node.path))
-                      )(if (navMgrState.fullPath) node.path else node.name),
-                      td(node.childCount),
-                      td(node.dummyCount),
-                      td(node.childFileCount),
-                      td(node.dupCount),
-                      td(node.extDupCount),
-                      td(node.selfDupCount),
-                      td(node.leafDupCount)
-                    )
-                  }
+                      )(
+                        td(node.ntype),
+                        td(node.hash),
+                        td(
+                          title := (if (navMgrState.fullPath) None else Some(node.path))
+                        )(if (navMgrState.fullPath) node.path else node.name),
+                        td(node.childCount),
+                        td(node.dummyCount),
+                        td(node.childFileCount),
+                        td(node.dupCount),
+                        td(node.extDupCount),
+                        td(node.selfDupCount),
+                        td(title := node.hashes.getOrElse(Set()).toList.sorted.mkString(","))(node.leafDupCount)
+                      )
+                    }),
                 )
               ),
               div(hidden := chldMgrState.children.size <= chldMgrState.limit)(
