@@ -7,16 +7,13 @@ import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasExtDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NodeTypeIn
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NonEmpty
-import com.gjuhasz86.dupfinder.shared.request.NodeSelection
+import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DeepChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DirectChildren
-import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
 import com.gjuhasz86.dupfinder.web.FetchUtils
 import io.circe.generic.auto._
 import io.circe.parser._
-import io.circe.syntax._
-import org.scalajs.dom.ext.KeyCode
 import org.scalajs.dom.html
 import org.scalajs.dom.html.Div
 import slinky.core._
@@ -45,8 +42,6 @@ import scala.collection.decorators._
   val navMgr: ReactRef[NavManager] = React.createRef[NavManager.Def]
   val chldMgr: ReactRef[ChildrenManager] = React.createRef[ChildrenManager.Def]
   val selMgr: ReactRef[SelectionManager] = React.createRef[SelectionManager.Def]
-  val sdMgr: ReactRef[SelfDupManager] = React.createRef[SelfDupManager.Def]
-
 
   override def componentDidMount(): Unit = {
     fetchRoot()
@@ -225,7 +220,6 @@ import scala.collection.decorators._
                   className := "item selectable",
                   onClick := { _ =>
                     navMgr.current.down(selMgrState.selected.toList, DupNodes, Set())
-                    sdMgr.current.loadChildren(selMgrState.selected.toList)
                   }
                 )(s"DOUBLES (${selMgrState.selected.map(_.hash).size})"),
               )
@@ -233,24 +227,6 @@ import scala.collection.decorators._
           ).withRef(selMgr)
         ).withRef(chldMgr)
       ).withRef(navMgr),
-      SelfDupManager(aggrMgrState =>
-        table(className := "nodeTable")(
-          thead(
-            tr(td("path"), td("count"))
-          ),
-          tbody(
-            aggrMgrState.aggr.zipWithIndex.map { case (aNode, idx) =>
-              tr(
-                key := aNode.path,
-                className := "nodeRow"
-              )(
-                td(title := aNode.hashes.toList.sorted.mkString(","))(aNode.path),
-                td(aNode.hashes.size)
-              )
-            }
-          )
-        )
-      ).withRef(sdMgr),
     )
   }
 }
