@@ -26,16 +26,16 @@ case class AggrManagerState(nodes: List[NodeLite])
 
   def aggregate(nodes: List[NodeLite]): List[NodeLite] = {
     @tailrec
-    def norm(list: List[NodeLite], acc: List[NodeLite]): List[NodeLite] =
+    def loop(list: List[NodeLite], acc: List[NodeLite]): List[NodeLite] =
       list match {
-        case a :: rest if a.ntype != "D" => norm(rest, acc)
-        case a :: b :: rest if a.hashes == b.hashes => norm(b :: rest, acc)
-        case a :: rest => norm(rest, a :: acc)
+        case a :: rest if a.ntype != "D" => loop(rest, acc)
+        case a :: b :: rest if a.hashes == b.hashes => loop(b :: rest, acc)
+        case a :: rest => loop(rest, a :: acc)
         case Nil => acc
       }
 
     if (props.enabled)
-      norm(nodes.sortBy(_.path), Nil).reverse
+      loop(nodes.sortBy(_.path), Nil).reverse
     else
       nodes
   }

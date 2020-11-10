@@ -8,6 +8,7 @@ import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasExtDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NodeTypeIn
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NonEmpty
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DeepChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DirectChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
@@ -52,7 +53,8 @@ import scala.collection.decorators._
       onClick := (_ => setState(_.copy(ctxMenuActive = false)))
     )(
       NavManager(onCurrentNodeChange = { navNode =>
-        chldMgr.current.loadChildren(NodeReq(navNode.nodes.map(_.path).toSet, navNode.selection, navNode.filter))
+        val nr = NodeReq(navNode.nodes.map(_.path).toSet, navNode.selection, navNode.filter)
+        chldMgr.current.loadChildren(nr)
         selMgr.current.clear()
       })(navMgrState =>
         ChildrenManager(chldMgrState =>
@@ -148,7 +150,14 @@ import scala.collection.decorators._
                       tr(
                         key := node.path,
                         className := (if (selMgrState.selected.contains(node)) "nodeRow selectedRow" else "nodeRow"),
-                        onDoubleClick := { case _ if node.ntype == "D" => navMgr.current.downSingle(node) case _ => },
+                        onDoubleClick := {
+                          case _ if node.ntype == "D" && !navMgrState.aggregate => navMgr.current.downSingle(node)
+                          case _ if node.ntype == "D" && navMgrState.aggregate =>
+                            navMgr.current.down(navMgrState.current.nodes, NodeSelection.DupNodes, Set(ChildFilter.DescendantOf(Set(node.path))))
+                            navMgr.current.setAggregate(false)
+                            navMgr.current.setFullPath(true)
+                          case _ =>
+                        },
                         onClick := {
                           case e if e.ctrlKey => selMgr.current.toggle(node)
                           case e if e.shiftKey => selMgr.current.addRange(idx)

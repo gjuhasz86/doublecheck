@@ -90,7 +90,9 @@ object NavMgrState {
     filters: Set[ChildFilter] = state.filter): Unit
   = {
     val ns = filters.toList.foldLeft(state)(_.withFilter(_))
-    down(NavNode(nodes, sel, ns.filter))
+    val newNavNode = NavNode(nodes, sel, ns.filter)
+    println(s"**A: $newNavNode")
+    down(newNavNode)
   }
 
   def down(root: NavNode): Unit =
@@ -100,7 +102,10 @@ object NavMgrState {
     ))
 
   override def componentDidUpdate(prevProps: Props, prevState: State) =
-    if (prevState.current.nodes != state.current.nodes) {
+    if (prevState.current.nodes != state.current.nodes
+      || (prevState.current.selection == NodeSelection.DupNodes && state.current.selection == NodeSelection.DupNodes
+      && prevState.current.filter != state.current.filter)
+    ) {
       props.onCurrentNodeChange(state.current)
     }
 }

@@ -85,6 +85,8 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
 
     selected.filter { node =>
       req.filters.forall {
+        case ChildFilter.DescendantOf(paths) =>
+          paths.exists(n => Paths.get(node.path).startsWith(n))
         case ChildFilter.NonEmpty =>
           node.nodetype match {
             case NodeType.Fil(_) => node.size != 0
@@ -100,14 +102,6 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
         case ChildFilter.HasDups =>
           pathsByHash.getOrElse(node.hash.get, Nil).size > 1
         case ChildFilter.HasExtDups =>
-          if (pathsByHash.getOrElse(node.hash.get, Nil).size > 1) {
-            println(node)
-            pathsByHash.getOrElse(node.hash.get, Nil)
-              .foreach { path =>
-                println(path)
-                println(req.roots.exists(root => !path.startsWith(root)))
-              }
-          }
           pathsByHash.getOrElse(node.hash.get, Nil)
             .filterNot(_ == node.path)
             .exists(path => req.roots.exists(root => !path.startsWith(root)))

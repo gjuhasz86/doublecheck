@@ -11,6 +11,7 @@ object NodeSelection {
 
 sealed trait ChildFilter
 object ChildFilter {
+  case class DescendantOf(nodes: Set[String]) extends ChildFilter
   case class NodeTypeIn(ntypes: Set[String]) extends ChildFilter
   case object NonEmpty extends ChildFilter
   case object Empty extends ChildFilter
