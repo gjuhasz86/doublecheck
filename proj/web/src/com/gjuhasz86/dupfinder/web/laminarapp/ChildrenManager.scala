@@ -1,4 +1,4 @@
-package com.gjuhasz86.dupfinder.web.proto
+package com.gjuhasz86.dupfinder.web.laminarapp
 
 import com.gjuhasz86.dupfinder.web.FetchUtils
 import com.raquo.airstream.eventbus.EventBus

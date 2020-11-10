@@ -1,4 +1,4 @@
-package com.gjuhasz86.dupfinder.web.proto2
+package com.gjuhasz86.dupfinder.web.reactapp
 
 import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.Stat

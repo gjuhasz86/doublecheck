@@ -1,4 +1,4 @@
-package com.gjuhasz86.dupfinder.web.proto2
+package com.gjuhasz86.dupfinder.web.reactapp
 
 import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
@@ -29,7 +29,7 @@ import slinky.web.html._
 
 import scala.collection.decorators._
 
-@react class App2 extends Component {
+@react class App extends Component {
 
   def fetchRoot(): Unit =
     FetchUtils.getBackend("rootLite") { res =>

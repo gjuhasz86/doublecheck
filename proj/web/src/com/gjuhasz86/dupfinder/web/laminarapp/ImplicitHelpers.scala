@@ -1,4 +1,4 @@
-package com.gjuhasz86.dupfinder.web.proto
+package com.gjuhasz86.dupfinder.web.laminarapp
 
 import com.raquo.airstream.signal.Signal
 import com.raquo.laminar.api.L._

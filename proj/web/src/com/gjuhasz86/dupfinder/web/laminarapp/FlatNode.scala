@@ -1,4 +1,4 @@
-package com.gjuhasz86.dupfinder.web.proto
+package com.gjuhasz86.dupfinder.web.laminarapp
 
 case class FlatNode(
   ntype: String,
