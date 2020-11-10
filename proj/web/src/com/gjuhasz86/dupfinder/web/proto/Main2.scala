@@ -1,6 +1,5 @@
 package com.gjuhasz86.dupfinder.web.proto
 
-import com.gjuhasz86.dupfinder.web.Node
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.laminar.api.L._
 import io.circe.generic.extras.Configuration
@@ -23,7 +22,7 @@ object Main2 {
     val navMgr = new NavManager
     val chdMgr = new ChildrenManager
     val rootMgr = new RootManager
-    val selMgr = new SelectionManager[Node]
+    val selMgr = new SelectionManager[FlatNode]
 
     val debugBus = new EventBus[Any]
     debugBus.events.foreach(x => println(s"DEBUG: $x"))(new Owner {})

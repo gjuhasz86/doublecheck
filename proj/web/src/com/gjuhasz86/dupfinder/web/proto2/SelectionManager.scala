@@ -5,16 +5,11 @@ import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import com.gjuhasz86.dupfinder.web.FetchUtils
-import com.gjuhasz86.dupfinder.web.Node
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.auto._
 import io.circe.parser._
 import io.circe.syntax._
 import slinky.core._
 import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.auto._
 import io.circe.parser._
 import io.circe.syntax._
 

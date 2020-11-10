@@ -1,6 +1,6 @@
-package com.gjuhasz86.dupfinder.web
+package com.gjuhasz86.dupfinder.web.proto
 
-case class Node(
+case class FlatNode(
   ntype: String,
   path: String,
   name: String,
@@ -12,9 +12,9 @@ case class Node(
   dummyCount: Int,
   childCount: Int,
   selfDupCount: Int,
-  children: List[Node] = Nil
+  children: List[FlatNode] = Nil
 )
 
-object Node {
-  val Empty: Node = Node("", "", "", 0, "", Map(), 0, 0, 0, 0, 0, Nil)
+object FlatNode {
+  val Empty: FlatNode = FlatNode("", "", "", 0, "", Map(), 0, 0, 0, 0, 0, Nil)
 }

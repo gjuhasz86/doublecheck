@@ -2,7 +2,6 @@ package com.gjuhasz86.dupfinder.web.proto
 
 
 import com.gjuhasz86.dupfinder.web.FetchUtils
-import com.gjuhasz86.dupfinder.web.Node
 import com.raquo.airstream.eventbus.EventBus
 import com.raquo.airstream.signal.Signal
 import com.raquo.laminar.api.L._

@@ -23,7 +23,6 @@ object Main {
       elem
     }
 
-    //    ReactDOM.render(App(), container)
     ReactDOM.render(proto2.App2(), container)
     //    ReactDOM.render(proto2.DebugComp(), container)
   }

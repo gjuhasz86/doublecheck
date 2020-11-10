@@ -13,9 +13,7 @@ import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DirectChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
 import com.gjuhasz86.dupfinder.web.FetchUtils
-import com.gjuhasz86.dupfinder.web.Node
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.auto._
+import io.circe.generic.auto._
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalajs.dom.ext.KeyCode
@@ -32,7 +30,6 @@ import slinky.web.html._
 import scala.collection.decorators._
 
 @react class App2 extends Component {
-  implicit private val customConfig: Configuration = Configuration.default.withDefaults
 
   def fetchRoot(): Unit =
     FetchUtils.getBackend("rootLite") { res =>
