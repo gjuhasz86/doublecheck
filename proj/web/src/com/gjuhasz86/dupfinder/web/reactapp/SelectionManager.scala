@@ -1,23 +1,15 @@
 package com.gjuhasz86.dupfinder.web.reactapp
 
 import com.gjuhasz86.dupfinder.shared.NodeLite
-import com.gjuhasz86.dupfinder.shared.request.ChildFilter
-import com.gjuhasz86.dupfinder.shared.request.NodeSelection
-import com.gjuhasz86.dupfinder.shared.request.NodeReq
-import com.gjuhasz86.dupfinder.web.FetchUtils
-import io.circe.parser._
-import io.circe.syntax._
 import slinky.core._
 import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
-import io.circe.parser._
-import io.circe.syntax._
 
 
 case class SelectionMgrState(lastSelected: Int, selected: Set[NodeLite], dragOp: SelectionManagerModels.SelCmd.Op)
 @react class SelectionManager extends Component {
-  import SelectionManagerModels._
   import SelectionManagerModels.SelCmd._
+  import SelectionManagerModels._
 
   case class Props(items: List[NodeLite], children: SelectionMgrState => ReactElement)
   type State = SelectionMgrState

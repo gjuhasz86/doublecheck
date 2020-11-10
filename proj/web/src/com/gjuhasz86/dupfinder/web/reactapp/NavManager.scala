@@ -4,13 +4,8 @@ import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter._
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection
-import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DeepChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.auto._
-import io.circe.parser._
-import io.circe.syntax._
 import slinky.core._
 import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
