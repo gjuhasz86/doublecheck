@@ -220,6 +220,7 @@ import scala.collection.decorators._
                   className := "item selectable",
                   onClick := { _ =>
                     navMgr.current.down(selMgrState.selected.toList, DupNodes, Set())
+                    chldMgr.current.sortByPath()
                   }
                 )(s"DOUBLES (${selMgrState.selected.map(_.hash).size})"),
               )
