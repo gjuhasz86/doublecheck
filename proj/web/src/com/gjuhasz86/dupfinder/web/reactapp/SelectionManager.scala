@@ -23,9 +23,9 @@ case class SelectionMgrState(lastSelected: Int, selected: Set[NodeLite], dragOp:
     case cmd@ByRangeCont(_, _) => cmd.normalize(props.items, state.lastSelected)
     case cmd@SelEvent(_, _, _) => cmd
   }) match {
-    case SelEvent(Op.CleanAdd, items, idx) => setState(_.copy(lastSelected = idx, selected = items))
-    case SelEvent(Op.Add, items, idx) => setState(_.copy(lastSelected = idx, selected = state.selected ++ items))
-    case SelEvent(Op.Rem, items, idx) => setState(_.copy(lastSelected = idx, selected = state.selected -- items))
+    case SelEvent(Op.CleanAdd, items, idx) => setState(_.copy(lastSelected = idx, selected = items.toSet))
+    case SelEvent(Op.Add, items, idx) => setState(_.copy(lastSelected = idx, selected = state.selected ++ items.inner))
+    case SelEvent(Op.Rem, items, idx) => setState(_.copy(lastSelected = idx, selected = state.selected -- items.inner))
     case SelEvent(Op.Toggle, items, idx) =>
       val newSelected = items.foldLeft(state.selected)((acc, e) => if (acc.contains(e)) acc - e else acc + e)
       setState(_.copy(lastSelected = idx, selected = newSelected))
@@ -55,21 +55,27 @@ object SelectionManagerModels {
       case object Toggle extends Op
     }
 
-    case class All[A](op: Op) extends SelCmd[A] {
-      def normalize(items: List[A], lastIdx: Int) = SelEvent(op, items.toSet, lastIdx)
+    case class All[+A](op: Op) extends SelCmd[A] {
+      def normalize[B >: A](items: List[B], lastIdx: Int): SelEvent[B] = SelEvent.of(op, items, lastIdx)
     }
-    case class ByItem[A](op: Op, a: A) extends SelCmd[A] {
-      def normalize(items: List[A]) = SelEvent(op, Set(a), items.indexOf(a))
+    case class ByItem[+A](op: Op, a: A) extends SelCmd[A] {
+      def normalize[B >: A](items: List[B]): SelEvent[B] = SelEvent.of(op, List(a), items.indexOf(a))
     }
-    case class ByIdx[A](op: Op, idx: Int) extends SelCmd[A] {
-      def normalize(items: List[A]) = SelEvent(op, Set(items(idx)), idx)
+    case class ByIdx[+A](op: Op, idx: Int) extends SelCmd[A] {
+      def normalize[B >: A](items: List[B]): SelEvent[B] = SelEvent.of(op, List(items(idx)), idx)
     }
     case class ByRangeCont(op: Op, idx: Int) extends SelCmd[Nothing] {
-      def normalize[A](items: List[A], lastIdx: Int) = {
-        val its = (idx until lastIdx by (lastIdx - idx).sign).map(items.apply).toSet
-        SelEvent(op, its, idx)
+      def normalize[A](items: List[A], lastIdx: Int): SelEvent[A] = {
+        val its = (idx until lastIdx by (lastIdx - idx).sign).map(items.apply).toList
+        SelEvent.of(op, its, idx)
       }
     }
-    case class SelEvent[A](op: SelCmd.Op, items: Set[A], idx: Int) extends SelCmd[A]
+    case class SelEvent[+A](op: SelCmd.Op, items: UniqList[A], idx: Int) extends SelCmd[A]
+    object SelEvent {
+      import UniqList._
+
+      def of[A](op: Op, items: List[A], idx: Int): SelEvent[A] = new SelEvent(op, items.uniq, idx)
+    }
   }
+
 }
