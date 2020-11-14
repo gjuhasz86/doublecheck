@@ -8,12 +8,12 @@ object SelManager {
 
   def useSelection[T](items: List[T]) = {
     val (lastSelected, setLastSelected) = useState(0)
-    val (selected, setSelected) = useState(UniqList[T]())
+    val (selectedState, setSelected) = useState(UniqList[T]())
     val (dragOp, setDragOp) = useState[SelectionManagerModels.SelCmd.Op](SelCmd.Op.Add)
 
     new SelMgr[T] {
 
-      override def selection: UniqList[T] = selected
+      override def selected: UniqList[T] = selectedState
 
       override def makeSelection(cmd: SelCmd[T]) = (cmd match {
         case cmd@All(_) => cmd.normalize(items, lastSelected)
@@ -27,12 +27,12 @@ object SelManager {
           setSelected(items)
         case SelEvent(Op.Add, items, idx) =>
           setLastSelected(idx)
-          setSelected(selected ++ items)
+          setSelected(selectedState ++ items)
         case SelEvent(Op.Rem, items, idx) =>
           setLastSelected(idx)
-          setSelected(selected -- items)
+          setSelected(selectedState -- items)
         case SelEvent(Op.Toggle, items, idx) =>
-          val newSelected = items.foldLeft(selected)((acc, e: T) => if (acc.contains(e)) acc - e else acc + e)
+          val newSelected = items.foldLeft(selectedState)((acc, e: T) => if (acc.contains(e)) acc - e else acc + e)
           setLastSelected(idx)
           setSelected(newSelected)
       }
@@ -48,7 +48,7 @@ object SelManager {
       override def toggle(node: T) = makeSelection(ByItem(Op.Toggle, node))
       override def addRange(idx: Int) = makeSelection(ByRangeCont(Op.Add, idx))
 
-      override def dragFrom(node: T) = if (selected.contains(node)) setDrag(Op.Rem) else setDrag(Op.Add)
+      override def dragFrom(node: T) = if (selectedState.contains(node)) setDrag(Op.Rem) else setDrag(Op.Add)
       override def setDrag(op: Op) = setDragOp(op)
       override def dragOn(node: T) = makeSelection(ByItem(dragOp, node))
 
@@ -57,7 +57,7 @@ object SelManager {
   }
 
   trait SelMgr[T] {
-    def selection: UniqList[T]
+    def selected: UniqList[T]
     def makeSelection(cmd: SelectionManagerModels.SelCmd[T]): Unit
     def clear(): Unit
     def cleanAdd(node: T): Unit

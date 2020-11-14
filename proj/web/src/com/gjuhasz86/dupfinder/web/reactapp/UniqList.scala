@@ -12,6 +12,9 @@ class UniqList[+A] private(val inner: List[A] = Nil) extends AnyVal {
   def contains[B >: A](elem: B): Boolean = inner.contains(elem)
   def map[B](f: A => B): UniqList[B] = inner.map(f).uniq
   def foldLeft[B](acc: B)(f: (B, A) => B): B = inner.foldLeft(acc)(f)
+  def size: Int = inner.size
+  def isEmpty: Boolean = inner.isEmpty
+  def toList: List[A] = inner
   def toSet[B >: A]: Set[B] = inner.toSet
 }
 
