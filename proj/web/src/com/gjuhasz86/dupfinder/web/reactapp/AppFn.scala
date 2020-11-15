@@ -40,8 +40,8 @@ import scala.collection.decorators._
     val ctxMenu: ReactRef[Div] = React.createRef[html.Div]
     val navMgr: ReactRef[NavManager] = React.createRef[NavManager.Def]
 
-    val fetchMgr = NodeFetchMgr.useChildren
-    val selMgr = SelManager.useSelection(fetchMgr.children)
+    val fetchMgr = FetchMgr.useChildren
+    val selMgr = SelMgr.useSelection(fetchMgr.children)
 
     def fetchRoot(): Unit =
       FetchUtils.getBackend("rootLite") { res =>
@@ -203,7 +203,8 @@ import scala.collection.decorators._
           ),
           div(
             hidden := !ctxMenuActive,
-            className := "ctxMenu", ref := ctxMenu
+            className := "ctxMenu",
+            ref := ctxMenu
           )(
             div(className := "item")(s"SELECTED (${selMgr.selected.size})"),
             hr(className := "divider"),

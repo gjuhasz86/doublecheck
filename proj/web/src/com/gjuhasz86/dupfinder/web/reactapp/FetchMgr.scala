@@ -10,7 +10,20 @@ import slinky.core.facade.Hooks._
 
 case class ChildrenMgrState0(loading: Boolean, children: List[NodeLite], sorting: Ordering[NodeLite], limit: Int)
 
-object NodeFetchMgr {
+trait FetchMgr {
+  def loading: Boolean
+  def children: List[NodeLite]
+  def limit: Int
+
+  def setLimit(n: Int): Unit
+  def incLimitBy(n: Int): Unit
+  def noLimit(): Unit
+  def sortByName(): Unit
+  def sortByPath(): Unit
+  def loadChildren(req: NodeReq): Unit
+}
+
+object FetchMgr {
   def initialState = ChildrenMgrState(loading = false, Nil, Ordering.by(n => (n.ntype, n.name)), 1000)
 
   def useChildren: FetchMgr = {
@@ -53,19 +66,6 @@ object NodeFetchMgr {
         fetchNodes(req)
     }
 
-  }
-
-  trait FetchMgr {
-    def loading: Boolean
-    def children: List[NodeLite]
-    def limit: Int
-
-    def setLimit(n: Int): Unit
-    def incLimitBy(n: Int): Unit
-    def noLimit(): Unit
-    def sortByName(): Unit
-    def sortByPath(): Unit
-    def loadChildren(req: NodeReq): Unit
   }
 
 }

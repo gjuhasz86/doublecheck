@@ -1,11 +1,25 @@
 package com.gjuhasz86.dupfinder.web.reactapp
 
 import slinky.core.facade.Hooks._
+import SelectionManagerModels.SelCmd._
+import SelectionManagerModels._
 
-object SelManager {
-  import SelectionManagerModels.SelCmd._
-  import SelectionManagerModels._
+trait SelMgr[T] {
+  def selected: UniqList[T]
+  def makeSelection(cmd: SelectionManagerModels.SelCmd[T]): Unit
+  def clear(): Unit
+  def cleanAdd(node: T): Unit
+  def selectAll(): Unit
+  def add(node: T): Unit
+  def rem(node: T): Unit
+  def toggle(node: T): Unit
+  def addRange(idx: Int): Unit
+  def dragFrom(node: T): Unit
+  def setDrag(op: SelCmd.Op): Unit
+  def dragOn(node: T): Unit
+}
 
+object SelMgr {
   def useSelection[T](items: List[T]) = {
     val (lastSelected, setLastSelected) = useState(0)
     val (selectedState, setSelected) = useState(UniqList[T]())
@@ -56,18 +70,4 @@ object SelManager {
 
   }
 
-  trait SelMgr[T] {
-    def selected: UniqList[T]
-    def makeSelection(cmd: SelectionManagerModels.SelCmd[T]): Unit
-    def clear(): Unit
-    def cleanAdd(node: T): Unit
-    def selectAll(): Unit
-    def add(node: T): Unit
-    def rem(node: T): Unit
-    def toggle(node: T): Unit
-    def addRange(idx: Int): Unit
-    def dragFrom(node: T): Unit
-    def setDrag(op: SelCmd.Op): Unit
-    def dragOn(node: T): Unit
-  }
 }
