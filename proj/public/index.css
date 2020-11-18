@@ -63,6 +63,13 @@ body {
   background: goldenrod;
 }
 
+.textBtn.indicator:hover {
+  background: none;
+}
+
+.textBtn.indicator.active {
+  background: antiquewhite;
+}
 
 .activeDup {
   color:blue;

@@ -91,7 +91,6 @@ object NavMgrState {
   = {
     val ns = filters.toList.foldLeft(state)(_.withFilter(_))
     val newNavNode = NavNode(nodes, sel, ns.filter)
-    println(s"**A: $newNavNode")
     down(newNavNode)
   }
 

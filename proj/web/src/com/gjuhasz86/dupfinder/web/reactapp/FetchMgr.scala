@@ -14,6 +14,7 @@ trait FetchMgr {
   def loading: Boolean
   def children: List[NodeLite]
   def limit: Int
+  def ord: Ordering[NodeLite]
 
   def setLimit(n: Int): Unit
   def incLimitBy(n: Int): Unit
@@ -24,13 +25,14 @@ trait FetchMgr {
 }
 
 object FetchMgr {
-  def initialState = ChildrenMgrState(loading = false, Nil, Ordering.by(n => (n.ntype, n.name)), 1000)
+  val ordByName: Ordering[NodeLite] = Ordering.by(n => (n.ntype, n.name))
+  val ordByPath: Ordering[NodeLite] = Ordering.by(_.path)
 
   def useChildren: FetchMgr = {
 
     val (loadingState, setLoading) = useState(false)
     val (limitState, setLimitState) = useState(1000)
-    val (ordering, setOrdering) = useState(Ordering.by((n: NodeLite) => (n.ntype, n.name)))
+    val (ordering, setOrdering) = useState(ordByName)
     val (childrenState, setChildren) = useState(List[NodeLite]())
 
     def fetchNodes(req: NodeReq): Unit = {
@@ -47,19 +49,19 @@ object FetchMgr {
       def loading = loadingState
       def children = childrenState
       def limit = limitState
+      def ord = ordering
+
       def setLimit(n: Int) = setLimitState(n)
       def incLimitBy(n: Int) = setLimitState(limit + n)
       def noLimit() = setLimit(children.size)
       def sortByName() = {
-        val ord: Ordering[NodeLite] = Ordering.by(n => (n.ntype, n.name))
-        setOrdering(ord)
-        setChildren(children.sorted(ord))
+        setOrdering(ordByName)
+        setChildren(children.sorted(ordByName))
       }
 
       def sortByPath() = {
-        val ord: Ordering[NodeLite] = Ordering.by(_.path)
-        setOrdering(ord)
-        setChildren(children.sorted(ord))
+        setOrdering(ordByPath)
+        setChildren(children.sorted(ordByPath))
       }
 
       def loadChildren(req: NodeReq) =

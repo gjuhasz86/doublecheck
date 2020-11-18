@@ -34,10 +34,12 @@ case class AggrManagerState(nodes: List[NodeLite])
         case Nil => acc
       }
 
-    if (props.enabled)
-      loop(nodes.sortBy(_.path), Nil).reverse
-    else
-      nodes
+    val res =
+      if (props.enabled)
+        loop(nodes.sortBy(_.path), Nil).reverse
+      else
+        nodes
+    res
   }
 
 }
