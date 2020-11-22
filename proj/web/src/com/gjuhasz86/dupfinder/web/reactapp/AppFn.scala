@@ -8,7 +8,6 @@ import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasExtDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NodeTypeIn
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NonEmpty
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
-import com.gjuhasz86.dupfinder.shared.request.NodeSelection
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DeepChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DirectChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
@@ -36,7 +35,6 @@ import scala.collection.decorators._
     val (ctxMenuActive, setCtxMenuActive) = useState(false)
 
     val ctxMenu: ReactRef[Div] = React.createRef[html.Div]
-    //    val navMgr1: ReactRef[NavManager] = React.createRef[NavManager.Def]
 
     val fetchMgr = FetchMgr.useChildren
     val selMgr = SelMgr.useSelection(fetchMgr.children)
@@ -45,6 +43,7 @@ import scala.collection.decorators._
       fetchMgr.loadChildren(nr)
       selMgr.clear()
     })
+    val aggrNodes = AggrMgr.useAggregation(fetchMgr.children, navMgr.current.viewNode.aggregate)
 
     def fetchRoot(): Unit =
       FetchUtils.getBackend("rootLite") { res =>
@@ -209,54 +208,53 @@ import scala.collection.decorators._
             )(
               td("D"), td(""), td(".."), td("0"), td("0"), td("0"), td("0"), td("0"), td("0"), td("0")
             ),
-            AggrManager(fetchMgr.children.sorted(fetchMgr.ord), navMgr.current.viewNode.aggregate)(agrMgrState =>
-              agrMgrState.nodes.take(fetchMgr.limit).zipWithIndex.map { case (node, idx) =>
-                tr(
-                  key := node.path,
-                  className := (if (selMgr.selected.contains(node)) "nodeRow selectedRow" else "nodeRow"),
-                  onDoubleClick := {
-                    case _ if node.ntype == "D" && !navMgr.nextNavNode.viewNode.aggregate => navMgr.down(node)
-                    case _ if node.ntype == "D" && navMgr.nextNavNode.viewNode.aggregate =>
-                      navMgr.down(
-                        navMgr.current.navNode.nodes,
-                        navMgr.current.addFilter(ChildFilter.DescendantOf(Set(node.path)))
-                          .setAggregate(false)
-                          .setFullPath(true)
-                      )
-                    case _ =>
-                  },
-                  onClick := {
-                    case e if e.ctrlKey => selMgr.toggle(node)
-                    case e if e.shiftKey => selMgr.addRange(idx)
-                    case _ => selMgr.cleanAdd(node)
-                  },
-                  onMouseDown := { _ => selMgr.dragFrom(node) },
-                  onMouseEnter := { case e if e.buttons == 1 => selMgr.dragOn(node) case _ => },
-                  onMouseLeave := { case e if e.buttons == 1 => selMgr.dragOn(node) case _ => },
-                  onContextMenu := { case e if !(e.shiftKey && e.ctrlKey) =>
-                    e.preventDefault()
-                    if (selMgr.selected.isEmpty) {
-                      selMgr.add(node)
-                    }
-                    ctxMenu.current.style = s"top: ${e.pageY}px; left:${e.pageX}px;"
-                    setCtxMenuActive(true)
+            aggrNodes.take(fetchMgr.limit).zipWithIndex.map { case (node, idx) =>
+              tr(
+                key := node.path,
+                className := (if (selMgr.selected.contains(node)) "nodeRow selectedRow" else "nodeRow"),
+                onDoubleClick := {
+                  case _ if node.ntype == "D" && !navMgr.nextNavNode.viewNode.aggregate => navMgr.down(node)
+                  case _ if node.ntype == "D" && navMgr.nextNavNode.viewNode.aggregate =>
+                    navMgr.down(
+                      navMgr.current.navNode.nodes,
+                      navMgr.current.addFilter(ChildFilter.DescendantOf(Set(node.path)))
+                        .setAggregate(false)
+                        .setFullPath(true)
+                    )
                   case _ =>
+                },
+                onClick := {
+                  case e if e.ctrlKey => selMgr.toggle(node)
+                  case e if e.shiftKey => selMgr.addRange(idx)
+                  case _ => selMgr.cleanAdd(node)
+                },
+                onMouseDown := { _ => selMgr.dragFrom(node) },
+                onMouseEnter := { case e if e.buttons == 1 => selMgr.dragOn(node) case _ => },
+                onMouseLeave := { case e if e.buttons == 1 => selMgr.dragOn(node) case _ => },
+                onContextMenu := { case e if !(e.shiftKey && e.ctrlKey) =>
+                  e.preventDefault()
+                  if (selMgr.selected.isEmpty) {
+                    selMgr.add(node)
                   }
-                )(
-                  td(node.ntype),
-                  td(node.hash),
-                  td(
-                    title := (if (navMgr.current.viewNode.fullPath) None else Some(node.path))
-                  )(if (navMgr.current.viewNode.fullPath) node.path else node.name),
-                  td(node.childCount),
-                  td(node.dummyCount),
-                  td(node.childFileCount),
-                  td(node.dupCount),
-                  td(node.extDupCount),
-                  td(node.selfDupCount),
-                  td(title := node.hashes.getOrElse(Set()).toList.sorted.mkString(","))(node.leafDupCount)
-                )
-              }),
+                  ctxMenu.current.style = s"top: ${e.pageY}px; left:${e.pageX}px;"
+                  setCtxMenuActive(true)
+                case _ =>
+                }
+              )(
+                td(node.ntype),
+                td(node.hash),
+                td(
+                  title := (if (navMgr.current.viewNode.fullPath) None else Some(node.path))
+                )(if (navMgr.current.viewNode.fullPath) node.path else node.name),
+                td(node.childCount),
+                td(node.dummyCount),
+                td(node.childFileCount),
+                td(node.dupCount),
+                td(node.extDupCount),
+                td(node.selfDupCount),
+                td(title := node.hashes.getOrElse(Set()).toList.sorted.mkString(","))(node.leafDupCount)
+              )
+            }
           )
         ),
         div(hidden := fetchMgr.children.size <= fetchMgr.limit)(
