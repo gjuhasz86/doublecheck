@@ -25,6 +25,10 @@ trait NavMgr {
   def down(nodes: List[NodeLite], navNode: FullNavNode): Unit
 }
 
+case class NavNode(nodes: List[NodeLite], selection: NodeSelection, filter: Set[ChildFilter])
+object NavNode {
+  val default = NavNode(List(NodeLite.Empty), NodeSelection.DirectChildren, Set())
+}
 case class ViewNode(fullPath: Boolean, aggregate: Boolean, manual: Boolean)
 case class FullNavNode(navNode: NavNode, viewNode: ViewNode) {
   def setFullPath(enabled: Boolean) =
