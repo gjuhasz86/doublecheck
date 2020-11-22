@@ -12,8 +12,11 @@ import slinky.core.facade.Hooks._
 
 trait NavMgr {
   def parents: List[FullNavNode]
+  def current: FullNavNode
   def nextNavNode: FullNavNode
   def changeNextNavNode(f: FullNavNode => FullNavNode): Unit
+  def changeCurrNavNode(f: FullNavNode => FullNavNode): Unit
+  def syncNext(): Unit
 
   def root(node: NodeLite): Unit
   def root(node: NodeLite, navNode: FullNavNode): Unit
