@@ -128,7 +128,13 @@ class GraphBuilder(nodesFile: File, hashFile: File) {
 
     val leafSet =
       roots
-        .map(hashesByPath)
+        .map(x => x -> hashesByPath.get(x))
+        .flatMap {
+          case (path, None) =>
+            println(s"Couldn't find hash for path [$path]")
+            None
+          case (_, hash) => hash
+        }
         .distinct
         .flatMap(pathsByHash.get)
         .flatten
