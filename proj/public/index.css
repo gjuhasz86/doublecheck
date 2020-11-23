@@ -2,6 +2,13 @@ body {
   font-family: monospace;
 }
 
+.panel {
+  border: 1px solid black;
+  padding: 8px;
+  margin: 4px;
+  display: inline-block;
+}
+
 .nodeTable {
   user-select: none;
   border-spacing: 0px;
@@ -9,6 +16,23 @@ body {
 
 .nodeTable td {
   border: 1px solid white;
+}
+
+.nodeTable thead td:hover {
+  background: beige;
+}
+
+.nodeTable thead td.dragging {
+  color: grey;
+  background: bisque;
+}
+
+.nodeTable thead td.dragover-left {
+  border-left: 2px solid coral;
+}
+
+.nodeTable thead td.dragover-right {
+  border-right: 2px solid coral;
 }
 
 .nodeTable.loading {
@@ -45,10 +69,15 @@ body {
   display: inline-block;
 }
 
+
 .textBtn {
   cursor: default;
   display: inline-block;
   margin: 0px 5px;
+}
+
+.addPanel {
+  display: block;
 }
 
 .textBtn:hover {
@@ -88,6 +117,10 @@ body {
 
 .ctxMenu > .item {
   padding: 10px;
+}
+
+.ctxMenu > .item.condensed {
+  padding: 4px;
 }
 
 .ctxMenu > .selectable:hover{
