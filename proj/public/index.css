@@ -1,16 +1,25 @@
 body {
+  user-select: none;
   font-family: monospace;
 }
 
-.panel {
+.panelOuter {
   border: 1px solid black;
   padding: 8px;
   margin: 4px;
   display: inline-block;
 }
 
+.panelHead {
+  display: flex;
+}
+
+.panelTitle {
+  display: inline-block;
+  padding: 0px 4px
+}
+
 .nodeTable {
-  user-select: none;
   border-spacing: 0px;
 }
 
@@ -73,7 +82,7 @@ body {
 .textBtn {
   cursor: default;
   display: inline-block;
-  margin: 0px 5px;
+  margin: 0px 2px;
 }
 
 .addPanel {
@@ -129,4 +138,12 @@ body {
 
 .ctxMenu > .divider {
   margin: 0px;
+}
+
+.hidden {
+  display: none;
+}
+
+.panelClose {
+  margin-left: auto;
 }

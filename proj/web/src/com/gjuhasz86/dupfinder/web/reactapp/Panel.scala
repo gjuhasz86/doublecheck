@@ -14,10 +14,12 @@ import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DeepChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DirectChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
 import com.gjuhasz86.dupfinder.web.FetchUtils
-import io.circe.parser._
+import com.gjuhasz86.dupfinder.web.reactapp.ColMgr.ColHeader
 import io.circe.generic.auto._
+import io.circe.parser._
 import org.scalajs.dom.html
 import org.scalajs.dom.html.Div
+import rx._
 import slinky.core._
 import slinky.core.annotations.react
 import slinky.core.facade.Fragment
@@ -25,14 +27,13 @@ import slinky.core.facade.Hooks._
 import slinky.core.facade.React
 import slinky.core.facade.ReactRef
 import slinky.web.html._
-import ColMgr.ColHeader
 
 import scala.collection.decorators._
 
 @react object Panel {
   type ColDef = ColMgr.ColDef[NodeLite]
 
-  type Props = Unit
+  case class Props(id: Int, onSelectionChange: List[NodeLite] => Unit, inputNodes: Rx[List[NodeLite]])
 
   val allColumns: List[ColDef] = List(
     NodeStatCol("typ", classOf[Stat.NType])(_.value.short),
@@ -53,7 +54,7 @@ import scala.collection.decorators._
   val defaultCols =
     allColumns.map(c => ColHeader(c.name, c.name != "hash"))
 
-  val component = FunctionalComponent[Props] { _ =>
+  val component = FunctionalComponent[Props] { props =>
     val (ctxMenuActive, setCtxMenuActive) = useState(false)
     val (headerMenuActive, setHeaderMenuActive) = useState(false)
     val (dragCol, setDragCol) = useState(None: Option[String])
@@ -64,6 +65,12 @@ import scala.collection.decorators._
 
     val fetchMgr = FetchMgr.useChildren
     val selMgr = SelMgr.useSelection(fetchMgr.children)
+
+    useEffect(() => {
+      props.onSelectionChange(selMgr.selected.toList)
+    }, List(selMgr.selected)
+    )
+
     val navMgr = NavMgr.useNavigation(onCurrentChange = navNode => {
       val nr = NodeReq(navNode.navNode.nodes.map(_.path).toSet, navNode.navNode.selection, navNode.navNode.filter)
       fetchMgr.loadChildren(nr)
@@ -86,6 +93,28 @@ import scala.collection.decorators._
 
     useEffect(() => fetchRoot(), Nil)
 
+    //    val obs = props.inputNodes.triggerLater { nodes =>
+    //      println(s"Triggered Obs in [#${props.id}]")
+    //      if (navMgr.parents.size > 1) {
+    //        navMgr.changeCurrNavNode(_.setNodes(nodes))
+    //      } else {
+    //        navMgr.down(nodes)
+    //      }
+    //    }
+    //
+    //    println(s"Created Obs [${obs.hashCode()}] in [#${props.id}]")
+    useEffect { () =>
+      val obs = props.inputNodes.triggerLater { nodes =>
+        println(s"Triggered Obs in [#${props.id}]")
+        if (navMgr.parents.size > 1) {
+          navMgr.changeCurrNavNode(_.setNodes(nodes))
+        } else {
+          navMgr.down(nodes)
+        }
+      }
+      println(s"Created Obs [${obs.hashCode()}] in [#${props.id}]")
+      () => {obs.kill(); println(s"Killed Obs [${obs.hashCode()}] in [#${props.id}]")}
+    }
 
     div(
       className := "panel",
@@ -209,6 +238,7 @@ import scala.collection.decorators._
             onClick := (_ => navMgr.syncNext())
           )("[SYNC]")
         ),
+        hr(),
         div(className := "breadcrumbHolder")(
           navMgr.parents.zipWithIndex.reverse.map { case (FullNavNode(navNode, viewNode), idx) =>
             div(
@@ -237,6 +267,7 @@ import scala.collection.decorators._
             )(
               colMgr.columns.zipWithIndex.map { case (c, idx) =>
                 td(
+                  key := c.name,
                   className := {
                     if (dragColOver.contains(c.name) && idx < dragIdx) "dragover-left"
                     else if (dragColOver.contains(c.name) && idx > dragIdx) "dragover-right"
@@ -263,10 +294,10 @@ import scala.collection.decorators._
               onDoubleClick := (_ => navMgr.up())
             )(
               colMgr.columns.map(_.name).map {
-                case "typ" => td("D")
-                case "hash" => td("")
-                case "name" => td("..")
-                case _ => td("0")
+                case c@"typ" => td(key := c)("D")
+                case c@"hash" => td(key := c)("")
+                case c@"name" => td(key := c)("..")
+                case c => td(key := c)("0")
               }
             ),
             aggrNodes.take(fetchMgr.limit).zipWithIndex.map { case (node, idx) =>
@@ -302,7 +333,7 @@ import scala.collection.decorators._
                 case _ =>
                 }
               )(
-                colMgr.columns.map(c => td(c.get(node)))
+                colMgr.columns.map(c => td(key := c.name)(c.get(node)))
               )
             }
           )
@@ -385,6 +416,7 @@ import scala.collection.decorators._
         )(
           colMgr.colHeaders.map(h =>
             div(
+              key := h.name,
               className := "item selectable condensed",
               onClick := { e => e.stopPropagation(); colMgr.toggle(h.name) }
             )(s"[${if (h.visible) "o" else " "}] ${h.name}"),

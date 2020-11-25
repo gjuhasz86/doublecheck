@@ -77,7 +77,8 @@ object NavMgr {
 
   def useNavigation(onCurrentChange: FullNavNode => Unit) = {
     val (parentsState, setParents) = useState(List[FullNavNode]())
-    val (nextNavNodeState, setNextNavNode) = useState(FullNavNode(NavNode.default, ViewNode(false, false, true)).addFilter(NonEmpty))
+    val (nextNavNodeState, setNextNavNode) =
+      useState(FullNavNode(NavNode.default, ViewNode(fullPath = false, aggregate = false, manual = true)).addFilter(NonEmpty))
 
     def setParentsWithCallback(nodes: List[FullNavNode]) = {
       val invoke = parentsState.headOption.forall(_.navNode != nodes.head.navNode)
@@ -87,7 +88,8 @@ object NavMgr {
 
     new NavMgr {
       def parents = parentsState
-      def current = parentsState.headOption.getOrElse(FullNavNode(NavNode.default, ViewNode(false, false, true)))
+      def current = parentsState.headOption
+        .getOrElse(FullNavNode(NavNode.default, ViewNode(fullPath = false, aggregate = false, manual = true)))
 
       def nextNavNode = nextNavNodeState
 
@@ -121,8 +123,10 @@ object NavMgr {
       def down(node: NodeLite) =
         down(List(node))
 
-      def down(nodes: List[NodeLite]) =
+      def down(nodes: List[NodeLite]) = {
+        println(s"Calling DOWN. nextNavNodeState=[$nextNavNodeState]")
         down(nodes, nextNavNodeState)
+      }
 
       def down(node: NodeLite, navNode: FullNavNode) =
         down(List(node), navNode)

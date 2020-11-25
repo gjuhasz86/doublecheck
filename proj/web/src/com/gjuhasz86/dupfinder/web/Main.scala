@@ -24,7 +24,7 @@ object Main {
       elem
     }
 
-    ReactDOM.render(simplified.MainAppFn(), container)
+    ReactDOM.render(reactapp.App(), container)
     //    ReactDOM.render(proto2.DebugComp(), container)
   }
 }
