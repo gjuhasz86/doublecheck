@@ -1,5 +1,16 @@
-package com.gjuhasz86.dupfinder.web.simplified
+package com.gjuhasz86.dupfinder.web.simplified.nomacro
 
+import org.scalajs.dom.raw.HTMLInputElement
+import slinky.core._
+import slinky.core.facade.React
+import slinky.core.facade.ReactElement
+import slinky.core.facade.ReactRef
+import slinky.web.html._
+import slinky.web.ReactDOM
+
+import scala.scalajs.js
+import scala.util.Try
+import scala.scalajs.js.annotation._
 import slinky.core._
 import slinky.core.annotations.react
 import slinky.core.facade.Hooks._
@@ -7,7 +18,7 @@ import slinky.web.html._
 import rx._
 import slinky.core.facade.React
 
-@react object MainAppFn {
+object MainApp {
 
   type Props = Unit
   val component = FunctionalComponent[Props] { _ =>
@@ -19,10 +30,10 @@ import slinky.core.facade.React
     val outLinks = links.toList.groupBy(_._2).map { case (from, tos) => from -> tos.map(_._1) }
 
 
-    println(s"creating vars in main")
+    // println(s"creating vars in main")
     val numInputs = Var(-1 -> 0)
     val nums = Var(-1 -> 0)
-    val obs = nums.trigger(n => println(s"Received $n"))
+    val obs = nums.trigger((n: (Int, Int)) => println(s"Received $n"))
     useEffect(() => () => obs.kill())
 
     nums.map { case (srcIdx, n) =>
@@ -41,19 +52,20 @@ import slinky.core.facade.React
             case Some(lnk) if lnk == idx => setLinks(links -- Set(idx)); setCurrLink(None)
             case None => setCurrLink(Some(idx))
           }))(idx, links.get(idx).map(x => s" <- $x")),
-          PanelFn(numInputs.filter(_._1 == idx).map(_._2), r => nums.update(idx -> r))
+          Panel.component(Panel.Props(numInputs.filter(_._1 == idx).map(_._2), r => nums.update(idx -> r)))
         )
       },
       button(onClick := (_ => setPanelCount(panelCount + 1)))("[ADD PANEL]")
     )
   }
 }
-@react object PanelFn {
+
+object Panel {
   case class Props(inputStream: Rx[Int], onResultChange: Int => Unit)
   val component = FunctionalComponent[Props] { props =>
-    println(s"creating panel")
+    // println(s"creating panel")
     val (op, setOp) = useState("ADD")
-    val (num1, setNum1) = useState(props.inputStream.now)
+    val (num1, setNum1) = useState(0)
     val (num2, setNum2) = useState(0)
 
     val n1Ref = React.createRef[org.scalajs.dom.html.Input]
@@ -67,13 +79,13 @@ import slinky.core.facade.React
 
     val result = fn(num1, num2)
     useEffect(() => {
-      println(s"result updated [$result]")
+      // println(s"result updated [$result]")
       props.onResultChange(result)
     }, List(result))
 
 
-    val obs = props.inputStream.triggerLater { n =>
-      println(s"Setting num1 to [$n]")
+    val obs = props.inputStream.triggerLater { (n: Int) =>
+      // println(s"Setting num1 to [$n]")
       setNum1(n)
       Option(n1Ref.current).foreach(_.value = n.toString)
     }
@@ -82,13 +94,13 @@ import slinky.core.facade.React
     val nextOp = Map("ADD" -> "MUL", "MUL" -> "POW", "POW" -> "ADD")
 
     def handleChange1() = {
-      val n = n1Ref.current.value.toIntOption.getOrElse(0)
-      println(s"Changed 1 : [$n]")
+      val n = Try(n1Ref.current.value.toInt).getOrElse(0)
+      // println(s"Changed 1 : [$n]")
       setNum1(n)
     }
     def handleChange2() = {
-      val n = n2Ref.current.value.toIntOption.getOrElse(0)
-      println(s"Changed 2: [$n]")
+      val n = Try(n2Ref.current.value.toInt).getOrElse(0)
+      // println(s"Changed 2: [$n]")
       setNum2(n)
     }
 
