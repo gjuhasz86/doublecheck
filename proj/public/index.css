@@ -3,11 +3,18 @@ body {
   font-family: monospace;
 }
 
+.panelArea {
+  display: flex;
+  flex-wrap: wrap;
+}
+
 .panelOuter {
   border: 1px solid black;
   padding: 8px;
   margin: 4px;
   display: inline-block;
+  flex-basis: 48%;
+  overflow-wrap: anywhere;
 }
 
 .panelHead {
@@ -17,6 +24,10 @@ body {
 .panelTitle {
   display: inline-block;
   padding: 0px 4px
+}
+
+.panel.minimized{
+  display: none;
 }
 
 .nodeTable {
@@ -56,6 +67,13 @@ body {
   cursor: default;
 }
 
+.alternate .nodeRow:nth-child(odd){
+    color: cornflowerblue;
+}
+.alternate .nodeRow:nth-child(even){
+    color: darkolivegreen;
+}
+
 .nodeRow:hover {
   background: antiquewhite;
 }
@@ -87,6 +105,9 @@ body {
 
 .addPanel {
   display: block;
+  min-height: 100px;
+  margin: 4px;
+  text-align: center;
 }
 
 .textBtn:hover {
@@ -122,6 +143,7 @@ body {
   cursor: default;
   background: white;
   border: 1px solid black;
+  white-space: nowrap;
 }
 
 .ctxMenu > .item {
@@ -145,5 +167,13 @@ body {
 }
 
 .panelClose {
+  /*margin-left: auto;*/
+}
+
+.panelMinimize {
   margin-left: auto;
+}
+
+.noWrap {
+  white-space: nowrap;
 }

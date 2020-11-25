@@ -33,12 +33,13 @@ import scala.collection.decorators._
 @react object Panel {
   type ColDef = ColMgr.ColDef[NodeLite]
 
-  case class Props(id: Int, onSelectionChange: List[NodeLite] => Unit, inputNodes: Rx[List[NodeLite]])
+  case class Props(id: Int, className: String, onSelectionChange: List[NodeLite] => Unit, inputNodes: Rx[List[NodeLite]])
 
   val allColumns: List[ColDef] = List(
     NodeStatCol("typ", classOf[Stat.NType])(_.value.short),
     NodeStatCol("hash", classOf[Stat.Hash])(_.value),
     NodeStatCol("name", classOf[Stat.Name])(_.value),
+    NodeStatCol("size", classOf[Stat.Size])(_.value),
     NodeStatCol("cld", classOf[Stat.ChildCount])(_.value),
     NodeStatCol("dmy", classOf[Stat.DummyCount])(_.value),
     NodeStatCol("nzf", classOf[Stat.ChildFileCount])(_.value),
@@ -47,6 +48,8 @@ import scala.collection.decorators._
     NodeStatCol("sdc", classOf[Stat.SelfDupCount])(_.value),
     NodeStatCol("ldc", classOf[Stat.LeafDupCount])(_.value)
   )
+
+  val allowWrap = Set("name")
 
   val colMap: Map[String, ColDef] =
     allColumns.map(c => c.name -> c).toMap
@@ -117,7 +120,7 @@ import scala.collection.decorators._
     }
 
     div(
-      className := "panel",
+      className := props.className,
       onClick := { _ => println("ON OUTER CLICK"); setCtxMenuActive(false); setHeaderMenuActive(false) }
     )(
       Fragment(
@@ -269,10 +272,11 @@ import scala.collection.decorators._
                 td(
                   key := c.name,
                   className := {
-                    if (dragColOver.contains(c.name) && idx < dragIdx) "dragover-left"
-                    else if (dragColOver.contains(c.name) && idx > dragIdx) "dragover-right"
-                    else if (dragCol.contains(c.name)) "dragging"
-                    else ""
+                    val nowrap = if (allowWrap(c.name)) "" else " noWrap"
+                    if (dragColOver.contains(c.name) && idx < dragIdx) "dragover-left" + nowrap
+                    else if (dragColOver.contains(c.name) && idx > dragIdx) "dragover-right" + nowrap
+                    else if (dragCol.contains(c.name)) "dragging" + nowrap
+                    else "" + nowrap
                   },
                   draggable := "true",
                   onDragOver := { e => e.preventDefault(); setDragColOver(Some(c.name)) },
@@ -333,7 +337,12 @@ import scala.collection.decorators._
                 case _ =>
                 }
               )(
-                colMgr.columns.map(c => td(key := c.name)(c.get(node)))
+                colMgr.columns.map(c =>
+                  td(
+                    key := c.name,
+                    className := (if (allowWrap(c.name)) "" else "noWrap")
+                  )(c.get(node))
+                )
               )
             }
           )
