@@ -96,16 +96,6 @@ import scala.collection.decorators._
 
     useEffect(() => fetchRoot(), Nil)
 
-    //    val obs = props.inputNodes.triggerLater { nodes =>
-    //      println(s"Triggered Obs in [#${props.id}]")
-    //      if (navMgr.parents.size > 1) {
-    //        navMgr.changeCurrNavNode(_.setNodes(nodes))
-    //      } else {
-    //        navMgr.down(nodes)
-    //      }
-    //    }
-    //
-    //    println(s"Created Obs [${obs.hashCode()}] in [#${props.id}]")
     useEffect { () =>
       val obs = props.inputNodes.triggerLater { nodes =>
         println(s"Triggered Obs in [#${props.id}]")
@@ -119,15 +109,21 @@ import scala.collection.decorators._
       () => {obs.kill(); println(s"Killed Obs [${obs.hashCode()}] in [#${props.id}]")}
     }
 
+    val (hideMenu, setHideMenu) = useState(false)
+
     div(
       className := props.className,
       onClick := { _ => println("ON OUTER CLICK"); setCtxMenuActive(false); setHeaderMenuActive(false) }
     )(
       Fragment(
-        div(
-          TextButton(
-            active = navMgr.nextNavNode.viewNode.fullPath,
-            clickHandler = { _ =>
+        div(className := (if (hideMenu) "hiddenMenu" else ""))(
+          div(
+            className := "textBtn hideMenu",
+            onClick := { _ => setHideMenu(!_) }
+          )(if (hideMenu) "[ > ]" else "[ < ]"),
+          div(
+            className := (if (navMgr.nextNavNode.viewNode.fullPath) "textBtn active" else "textBtn"),
+            onClick := { _ =>
               navMgr.changeNextNavNode(_.setFullPath(true))
               navMgr.changeCurrNavNode(_.setFullPath(true))
               fetchMgr.sortByPath()
@@ -196,7 +192,11 @@ import scala.collection.decorators._
             onClick := (_ => selMgr.selectAll())
           )("[SELECTALL]")
         ),
-        div(
+        div(className := (if (hideMenu) "hiddenMenu" else ""))(
+          div(
+            className := "textBtn hideMenu",
+            onClick := { _ => setHideMenu(!_) }
+          )(if (hideMenu) "[ > ]" else "[ < ]"),
           div(
             className := (if (navMgr.current.viewNode.fullPath) "textBtn indicator active" else "textBtn indicator")
           )("[FULL]"),
