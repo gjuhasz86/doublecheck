@@ -17,4 +17,9 @@ object ChildFilter {
   case object Empty extends ChildFilter
   case object HasDups extends ChildFilter
   case object HasExtDups extends ChildFilter
+  case object Ignored extends ChildFilter
+  case object Deleted extends ChildFilter
+  case object Inactive extends ChildFilter
+  case object Active extends ChildFilter
+  case object NoSafeDup extends ChildFilter
 }

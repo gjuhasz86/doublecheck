@@ -1,6 +1,9 @@
 package com.gjuhasz86.dupfinder.web.reactapp
 
 import com.gjuhasz86.dupfinder.shared.NodeLite
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter
+import com.gjuhasz86.dupfinder.shared.request.NodeSelection
+import com.gjuhasz86.dupfinder.web.FetchUtils
 import rx._
 import slinky.core._
 import slinky.core.annotations.react
@@ -20,10 +23,29 @@ import slinky.web.html._
     val (wide, setWide) = useState(Set[Int]())
     val (color, setColor) = useState(false)
     val (flex, setFlex) = useState(false)
+    val (marks, setMarks) = useState(0)
 
     val nodeInputs = Var(-1 -> List[NodeLite]())
-    //    val obs = nodeInputs.trigger(n => println(s"Received $n"))
-    //    useEffect(() => () => obs.kill())
+    val navSettings = Var(-1 -> (null: FullNavNode))
+    val obs = navSettings.trigger(n => println(s"Received $n"))
+    useEffect(() => () => obs.kill())
+
+    def persistMarks(): Unit = {
+      FetchUtils.postBackend("persistmarks", "") { res =>
+        setMarks(res.toInt)
+      }
+    }
+
+    def setup1() = {
+      setPanels(List(1, 2, 3, 4, 5))
+      setLinks(List(1 -> 2, 2 -> 3, 1 -> 4, 2 -> 5).map(_.swap).toMap)
+      navSettings.update(1 -> FullNavNode(NavNode(Nil, NodeSelection.DirectChildren, Set()), ViewNode(false, false)))
+      navSettings.update(2 -> FullNavNode(NavNode(Nil, NodeSelection.DeepChildren, Set(ChildFilter.HasExtDups)), ViewNode(true, false)))
+      navSettings.update(3 -> FullNavNode(NavNode(Nil, NodeSelection.DupNodes, Set(ChildFilter.NodeTypeIn(Set("F")))), ViewNode(true, false)))
+      navSettings.update(4 -> FullNavNode(NavNode(Nil, NodeSelection.DupNodes, Set(ChildFilter.NodeTypeIn(Set("F")))), ViewNode(true, false)))
+      navSettings.update(5 -> FullNavNode(NavNode(Nil, NodeSelection.DupNodes, Set(ChildFilter.NodeTypeIn(Set("D")))), ViewNode(true, false)))
+    }
+
     div(
       div(
         div(
@@ -33,7 +55,15 @@ import slinky.web.html._
         div(
           className := "textBtn" + (if (flex) " active" else ""),
           onClick := (_ => setFlex(!_))
-        )("[FLEX]")
+        )("[FLEX]"),
+        div(
+          className := "textBtn",
+          onClick := (_ => persistMarks())
+        )(s"[PERSIST ($marks)]"),
+        div(
+          className := "textBtn",
+          onClick := (_ => setup1())
+        )("[SETUP #1]")
       ),
       div(className := "panelArea" + (if (color) " alternate" else "") + (if (flex) " flex" else " cols"))(
         panels.map { id =>
@@ -89,7 +119,8 @@ import slinky.web.html._
                   if (minimized.contains(id)) "minimized" else "",
                 ).mkString(" "),
                 nodes => nodeInputs.update(id -> nodes),
-                nodeInputs.filter { case (src, _) => links.get(id).contains(src) }.map(_._2)
+                nodeInputs.filter { case (src, _) => links.get(id).contains(src) }.map(_._2),
+                navSettings.filter { case (target, _) => target == id }.map(_._2)
               )
             ),
             div(className := Seq("panelOuter rowBreak", if (wide.contains(id)) "wide" else "").mkString(" ")),

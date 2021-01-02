@@ -2,9 +2,13 @@ package com.gjuhasz86.dupfinder.web.reactapp
 
 import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Active
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Deleted
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Empty
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasExtDups
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Ignored
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Inactive
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NodeTypeIn
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NonEmpty
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection
@@ -17,6 +21,8 @@ trait NavMgr {
   def changeNextNavNode(f: FullNavNode => FullNavNode): Unit
   def changeCurrNavNode(f: FullNavNode => FullNavNode): Unit
   def syncNext(): Unit
+  def syncCurr(): Unit
+  def reload(): Unit
 
   def root(node: NodeLite): Unit
   def root(node: NodeLite, navNode: FullNavNode): Unit
@@ -32,7 +38,7 @@ case class NavNode(nodes: List[NodeLite], selection: NodeSelection, filter: Set[
 object NavNode {
   val default = NavNode(List(NodeLite.Empty), NodeSelection.DirectChildren, Set())
 }
-case class ViewNode(fullPath: Boolean, aggregate: Boolean, manual: Boolean)
+case class ViewNode(fullPath: Boolean, aggregate: Boolean)
 case class FullNavNode(navNode: NavNode, viewNode: ViewNode) {
   def setFullPath(enabled: Boolean) =
     copy(viewNode = viewNode.copy(fullPath = enabled))
@@ -58,9 +64,6 @@ case class FullNavNode(navNode: NavNode, viewNode: ViewNode) {
   def setNodes(nodes: List[NodeLite]) =
     copy(navNode = navNode.copy(nodes = nodes))
 
-  def setManual(m: Boolean) =
-    copy(viewNode = viewNode.copy(manual = m))
-
 }
 
 
@@ -71,6 +74,10 @@ object NavMgr {
       NonEmpty -> Set(Empty),
       HasExtDups -> Set(HasDups),
       HasDups -> Set(HasExtDups),
+      Ignored -> Set(Deleted, Inactive, Active),
+      Deleted -> Set(Ignored, Inactive, Active),
+      Inactive -> Set(Ignored, Deleted, Active),
+      Active -> Set(Ignored, Deleted, Inactive),
       NodeTypeIn(Set("D")) -> Set(NodeTypeIn(Set("F"))),
       NodeTypeIn(Set("F")) -> Set(NodeTypeIn(Set("D")))
     ).withDefaultValue(Set())
@@ -78,7 +85,7 @@ object NavMgr {
   def useNavigation(onCurrentChange: FullNavNode => Unit) = {
     val (parentsState, setParents) = useState(List[FullNavNode]())
     val (nextNavNodeState, setNextNavNode) =
-      useState(FullNavNode(NavNode.default, ViewNode(fullPath = false, aggregate = false, manual = true)).addFilter(NonEmpty))
+      useState(FullNavNode(NavNode.default, ViewNode(fullPath = false, aggregate = false)).addFilter(NonEmpty))
 
     def setParentsWithCallback(nodes: List[FullNavNode]) = {
       val invoke = parentsState.headOption.forall(_.navNode != nodes.head.navNode)
@@ -89,7 +96,7 @@ object NavMgr {
     new NavMgr {
       def parents = parentsState
       def current = parentsState.headOption
-        .getOrElse(FullNavNode(NavNode.default, ViewNode(fullPath = false, aggregate = false, manual = true)))
+        .getOrElse(FullNavNode(NavNode.default, ViewNode(fullPath = false, aggregate = false)))
 
       def nextNavNode = nextNavNodeState
 
@@ -108,6 +115,12 @@ object NavMgr {
           case head :: _ => setNextNavNode(head)
           case Nil =>
         }
+
+      def syncCurr() =
+        changeCurrNavNode(n => nextNavNodeState.setNodes(n.navNode.nodes))
+
+      def reload() =
+        onCurrentChange(current)
 
       def root(node: NodeLite) =
         root(node, nextNavNodeState)

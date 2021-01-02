@@ -19,7 +19,7 @@ object Preparation {
     outputFile.parent.createDirectories()
 
     val nodes = walkDir(dir :: Nil, Nil)
-    nodes.sortBy(_.file.toString).foreach { node =>
+    nodes.reverse.foreach { node =>
       val path = node.file.relativeTo(root)
       val row = s"${node.ntype.short},${node.size},$path"
       outputFile.appendLine(row)
@@ -34,12 +34,12 @@ object Preparation {
     counter += 1
     if (counter % 50000 == 0) {println(counter)}
     remaining match {
-      case curr :: rest if curr.isDirectory && curr.isReadable && !curr.isSymbolicLink =>
-        walkDir(curr.list.toList ::: rest, FileNode.of(curr) :: acc)
-      case curr :: rest =>
-        walkDir(rest, FileNode.of(curr) :: acc)
       case Nil =>
         acc
+      case curr :: rest if curr.isDirectory && curr.isReadable && !curr.isSymbolicLink =>
+        walkDir(curr.list.toList.reverse ::: rest, FileNode.of(curr) :: acc)
+      case curr :: rest =>
+        walkDir(rest, FileNode.of(curr) :: acc)
     }
   }
 

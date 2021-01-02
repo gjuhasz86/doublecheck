@@ -24,7 +24,8 @@ object WebServer {
     val staticPath = args.head
 
 
-    val graphBuilder = new GraphBuilder("data/nodes.csv".toFile, "data/hashes.txt".toFile)
+    val graphBuilder =
+      new GraphBuilder("data/nodes.csv".toFile, "data/hashes.txt".toFile, "data/exclude.txt".toFile, "data/marks.csv".toFile)
     println(graphBuilder.root)
     println(graphBuilder.root.path)
     println(graphBuilder.nodesByPath(graphBuilder.root.path).children.map(_.name))

@@ -2,21 +2,32 @@ package com.gjuhasz86.dupfinder.web.reactapp
 
 import com.gjuhasz86.dupfinder.shared.NodeLite
 import com.gjuhasz86.dupfinder.shared.Stat
+import com.gjuhasz86.dupfinder.shared.StatKey
 import com.gjuhasz86.dupfinder.shared.Stats
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Active
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Deleted
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Empty
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasDups
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.HasExtDups
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Ignored
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.Inactive
+import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NoSafeDup
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NodeTypeIn
 import com.gjuhasz86.dupfinder.shared.request.ChildFilter.NonEmpty
+import com.gjuhasz86.dupfinder.shared.request.MarkReq
+import com.gjuhasz86.dupfinder.shared.request.MarkType
 import com.gjuhasz86.dupfinder.shared.request.NodeReq
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DeepChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DirectChildren
 import com.gjuhasz86.dupfinder.shared.request.NodeSelection.DupNodes
 import com.gjuhasz86.dupfinder.web.FetchUtils
 import com.gjuhasz86.dupfinder.web.reactapp.ColMgr.ColHeader
+import com.gjuhasz86.dupfinder.web.Utils.skDec
+import com.gjuhasz86.dupfinder.web.Utils.skEnc
 import io.circe.generic.auto._
 import io.circe.parser._
+import io.circe.syntax._
 import org.scalajs.dom.html
 import org.scalajs.dom.html.Div
 import rx._
@@ -33,29 +44,34 @@ import scala.collection.decorators._
 @react object Panel {
   type ColDef = ColMgr.ColDef[NodeLite]
 
-  case class Props(id: Int, className: String, onSelectionChange: List[NodeLite] => Unit, inputNodes: Rx[List[NodeLite]])
+  case class Props(id: Int, className: String, onSelectionChange: List[NodeLite] => Unit,
+    inputNodes: Rx[List[NodeLite]], inputSettings: Rx[FullNavNode])
 
   val allColumns: List[ColDef] = List(
-    NodeStatCol("typ", classOf[Stat.NType])(_.value.short),
-    NodeStatCol("hash", classOf[Stat.Hash])(_.value),
-    NodeStatCol("name", classOf[Stat.Name])(_.value),
-    NodeStatCol("size", classOf[Stat.Size])(_.value),
-    NodeStatCol("cld", classOf[Stat.ChildCount])(_.value),
-    NodeStatCol("dmy", classOf[Stat.DummyCount])(_.value),
-    NodeStatCol("nzf", classOf[Stat.ChildFileCount])(_.value),
-    NodeStatCol("dup", classOf[Stat.DupCount])(_.value),
-    NodeStatCol("ext", classOf[Stat.ExtDupCount])(_.value),
-    NodeStatCol("sdc", classOf[Stat.SelfDupCount])(_.value),
-    NodeStatCol("ldc", classOf[Stat.LeafDupCount])(_.value)
+    NodeStatCol("typ", Stat.NType)(_.value.short),
+    NodeStatCol("hash", Stat.Hash)(_.value),
+    NodeStatCol("name", Stat.Name)(_.value),
+    NodeStatCol("size", Stat.Size)(_.value),
+    NodeStatCol("cld", Stat.ChildCount)(_.value),
+    NodeStatCol("dir", Stat.ChildDirCount)(_.value),
+    NodeStatCol("zfc", Stat.EmptyFileCount)(_.value),
+    NodeStatCol("nzf", Stat.ChildFileCount)(_.value),
+    NodeStatCol("dmy", Stat.DummyCount)(_.value),
+    NodeStatCol("dup", Stat.DupCount)(_.value),
+    NodeStatCol("ext", Stat.ExtDupCount)(_.value),
+    NodeStatCol("sdc", Stat.SelfDupCount)(_.value),
+    NodeStatCol("saf", Stat.SafeDupCount)(_.value),
+    NodeStatCol("ldc", Stat.LeafDupCount)(_.value)
   )
 
+  val hiddenCols = Set("hash", "dmy")
   val allowWrap = Set("name")
 
   val colMap: Map[String, ColDef] =
     allColumns.map(c => c.name -> c).toMap
 
   val defaultCols =
-    allColumns.map(c => ColHeader(c.name, c.name != "hash"))
+    allColumns.map(c => ColHeader(c.name, !hiddenCols.contains(c.name)))
 
   val component = FunctionalComponent[Props] { props =>
     val (ctxMenuActive, setCtxMenuActive) = useState(false)
@@ -94,19 +110,34 @@ import scala.collection.decorators._
         navMgr.root(root)
       }
 
+    def mark(req: MarkReq): Unit = {
+      FetchUtils.postBackend("mark", req.asJson.noSpaces) { res =>
+        val Right(markedPaths) = decode[List[NodeLite]](res)
+        println(markedPaths)
+      }
+    }
+
     useEffect(() => fetchRoot(), Nil)
 
     useEffect { () =>
       val obs = props.inputNodes.triggerLater { nodes =>
-        println(s"Triggered Obs in [#${props.id}]")
+        //        println(s"Triggered Obs in [#${props.id}]")
         if (navMgr.parents.size > 1) {
           navMgr.changeCurrNavNode(_.setNodes(nodes))
         } else {
           navMgr.down(nodes)
         }
       }
-      println(s"Created Obs [${obs.hashCode()}] in [#${props.id}]")
-      () => {obs.kill(); println(s"Killed Obs [${obs.hashCode()}] in [#${props.id}]")}
+      () => obs.kill()
+    }
+
+    useEffect { () =>
+      val obs = props.inputSettings.triggerLater { navNode =>
+        println(s"Triggered Obs in [#${props.id}] [$navNode]")
+        navMgr.changeCurrNavNode(nn => navNode.setNodes(nn.navNode.nodes))
+        navMgr.changeNextNavNode(nn => navNode.setNodes(nn.navNode.nodes))
+      }
+      () => obs.kill()
     }
 
     val (hideMenu, setHideMenu) = useState(false)
@@ -116,130 +147,235 @@ import scala.collection.decorators._
       onClick := { _ => println("ON OUTER CLICK"); setCtxMenuActive(false); setHeaderMenuActive(false) }
     )(
       Fragment(
+        /* ----------------- NEXT TOOLBAR ---------------- */
         div(className := (if (hideMenu) "hiddenMenu" else ""))(
           div(
-            className := "textBtn hideMenu",
+            className := "iconBtn hideMenu",
             onClick := { _ => setHideMenu(!_) }
-          )(if (hideMenu) "[ > ]" else "[ < ]"),
+          )(
+            if (hideMenu)
+              span(title := "SHOW", className := "mdi mdi-arrow-expand-right")
+            else
+              span(title := "HIDE", className := "mdi mdi-arrow-expand-left")
+          ),
+
           div(
-            className := (if (navMgr.nextNavNode.viewNode.fullPath) "textBtn active" else "textBtn"),
-            onClick := { _ =>
-              navMgr.changeNextNavNode(_.setFullPath(true))
-              navMgr.changeCurrNavNode(_.setFullPath(true))
-              fetchMgr.sortByPath()
-            }
-          )("[FULL]"),
+            className := "iconBtn",
+            onClick := (_ => navMgr.syncCurr())
+          )(span(title := "SYNC-DOWN", className := "mdi mdi-arrow-collapse-down")),
+
+          div(className := "iconBtn separator"),
+          div(className := "iconBtn separator"),
+
           div(
-            className := (if (!navMgr.nextNavNode.viewNode.fullPath) "textBtn active" else "textBtn"),
+            className := (if (navMgr.nextNavNode.navNode.selection == DirectChildren) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.setSelection(DirectChildren)))
+          )(span(title := "DIRECT", className := "mdi mdi-layers-outline")), // mdi-layers-outline mdi-animation-outline mdi-folder-open-outline mdi-folder-open-outline mdi-format-list-bulleted-square mdi-rhombus-outline
+          div(
+            className := (if (navMgr.nextNavNode.navNode.selection == DeepChildren) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.setSelection(DeepChildren)))
+          )(span(title := "DEEP", className := "mdi mdi-layers-triple-outline")),
+          div(
+            className := (if (navMgr.nextNavNode.navNode.selection == DupNodes) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.setSelection(DupNodes)))
+          )(span(title := "DOUBLES", className := "mdi mdi-checkbox-multiple-blank-outline")),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(NodeTypeIn(Set("F")))) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(NodeTypeIn(Set("F")))))
+          )(span(title := "FILES", className := "mdi mdi-file-outline")),
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(NodeTypeIn(Set("D")))) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(NodeTypeIn(Set("D")))))
+          )(span(title := "DIRS", className := "mdi mdi-folder-outline")),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(Empty)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(Empty)))
+          )(span(title := "EMPTY", className := "mdi mdi-tray")),
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(NonEmpty)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(NonEmpty)))
+          )(span(title := "NON-EMPTY", className := "mdi mdi-tray-full")),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(HasDups)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(HasDups)))
+          )(span(title := "DUPS", className := "mdi mdi-file-multiple-outline")),
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(HasExtDups)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(HasExtDups)))
+          )(span(title := "EXTDUPS", className := "mdi mdi-folder-multiple-outline")),
+
+          div(className := "iconBtn separator"),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(Ignored)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(Ignored)))
+          )(span(title := "IGNORED", className := "mdi mdi-cancel")), // mdi-cancel mdi-vanish
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(Deleted)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(Deleted)))
+          )(span(title := "DELETED", className := "mdi mdi-file-excel-box-outline")),
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(Inactive)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(Inactive)))
+          )(span(title := "INACTIVE", className := "mdi mdi-delete-outline")),
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(Active)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(Active)))
+          )(span(title := "ACTIVE", className := "mdi mdi-delete-off-outline")),
+
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.nextNavNode.navNode.filter.contains(NoSafeDup)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(NoSafeDup)))
+          )(span(title := "NOSAFE", className := "mdi mdi-select-multiple")),
+
+          div(className := "iconBtn separator"),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (!navMgr.nextNavNode.viewNode.fullPath) "iconBtn active" else "iconBtn"),
             onClick := { _ =>
               navMgr.changeNextNavNode(_.setFullPath(false))
               navMgr.changeCurrNavNode(_.setFullPath(false))
               fetchMgr.sortByName()
             }
-          )("[SHORT]"),
+          )(span(title := "SHORT", className := "mdi mdi-unfold-more-vertical")), // mdi-contain mdi-unfold-more-vertical
           div(
-            className := (if (navMgr.nextNavNode.navNode.selection == DirectChildren) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.setSelection(DirectChildren)))
-          )("[DIRECT]"),
-          div(
-            className := (if (navMgr.nextNavNode.navNode.selection == DeepChildren) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.setSelection(DeepChildren)))
-          )("[DEEP]"),
-          div(
-            className := (if (navMgr.nextNavNode.navNode.selection == DupNodes) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.setSelection(DupNodes)))
-          )("[DOUBLES]"),
-          div(
-            className := (if (navMgr.nextNavNode.navNode.filter.contains(NodeTypeIn(Set("F")))) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(NodeTypeIn(Set("F")))))
-          )("[FILES]"),
-          div(
-            className := (if (navMgr.nextNavNode.navNode.filter.contains(NodeTypeIn(Set("D")))) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(NodeTypeIn(Set("D")))))
-          )("[DIRS]"),
-          div(
-            className := (if (navMgr.nextNavNode.navNode.filter.contains(Empty)) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(Empty)))
-          )("[EMPTY]"),
-          div(
-            className := (if (navMgr.nextNavNode.navNode.filter.contains(NonEmpty)) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(NonEmpty)))
-          )("[NON-EMPTY]"),
-          div(
-            className := (if (navMgr.nextNavNode.navNode.filter.contains(HasDups)) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(HasDups)))
-          )("[DUPS]"),
-          div(
-            className := (if (navMgr.nextNavNode.navNode.filter.contains(HasExtDups)) "textBtn active" else "textBtn"),
-            onClick := (_ => navMgr.changeNextNavNode(_.toggleFilter(HasExtDups)))
-          )("[EXTDUPS]"),
-          div(
-            className := (if (navMgr.nextNavNode.viewNode.aggregate) "textBtn active" else "textBtn"),
+            className := (if (navMgr.nextNavNode.viewNode.fullPath) "iconBtn active" else "iconBtn"),
             onClick := { _ =>
-              navMgr.changeNextNavNode(_.setAggregate(true))
-              navMgr.changeCurrNavNode(_.setAggregate(true))
+              navMgr.changeNextNavNode(_.setFullPath(true))
+              navMgr.changeCurrNavNode(_.setFullPath(true))
+              fetchMgr.sortByPath()
             }
-          )("[AGGR]"),
+          )(span(title := "FULL", className := "mdi mdi-xml")), // mdi-pan-horizontal mdi-xml
+          div(className := "iconBtn separator"),
+
           div(
-            className := (if (!navMgr.nextNavNode.viewNode.aggregate) "textBtn active" else "textBtn"),
+            className := (if (!navMgr.nextNavNode.viewNode.aggregate) "iconBtn active" else "iconBtn"),
             onClick := { _ =>
               navMgr.changeNextNavNode(_.setAggregate(false))
               navMgr.changeCurrNavNode(_.setAggregate(false))
             }
-          )("[NOAGGR]"),
+          )(span(title := "NOAGGR", className := "mdi mdi-format-list-bulleted-square")),
           div(
-            className := "textBtn",
+            className := (if (navMgr.nextNavNode.viewNode.aggregate) "iconBtn active" else "iconBtn"),
+            onClick := { _ =>
+              navMgr.changeNextNavNode(_.setAggregate(true))
+              navMgr.changeCurrNavNode(_.setAggregate(true))
+            }
+          )(span(title := "AGGR", className := "mdi mdi-file-tree")),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := "iconBtn",
             onClick := (_ => selMgr.selectAll())
-          )("[SELECTALL]")
+          )(span(title := "SELECTALL", className := "mdi mdi-asterisk"))
         ),
+
+        /* ----------------- CURRENT TOOLBAR ---------------- */
+
         div(className := (if (hideMenu) "hiddenMenu" else ""))(
           div(
-            className := "textBtn hideMenu",
+            className := "iconBtn hideMenu",
             onClick := { _ => setHideMenu(!_) }
-          )(if (hideMenu) "[ > ]" else "[ < ]"),
+          )(
+            if (hideMenu)
+              span(title := "SHOW", className := "mdi mdi-arrow-expand-right")
+            else
+              span(title := "HIDE", className := "mdi mdi-arrow-expand-left")
+          ),
+
           div(
-            className := (if (navMgr.current.viewNode.fullPath) "textBtn indicator active" else "textBtn indicator")
-          )("[FULL]"),
-          div(
-            className := (if (!navMgr.current.viewNode.fullPath) "textBtn indicator active" else "textBtn indicator")
-          )("[SHORT]"),
-          div(
-            className := (if (navMgr.current.navNode.selection == DirectChildren) "textBtn indicator active" else "textBtn indicator")
-          )("[DIRECT]"),
-          div(
-            className := (if (navMgr.current.navNode.selection == DeepChildren) "textBtn indicator active" else "textBtn indicator")
-          )("[DEEP]"),
-          div(
-            className := (if (navMgr.current.navNode.selection == DupNodes) "textBtn indicator active" else "textBtn indicator")
-          )("[DOUBLES]"),
-          div(
-            className := (if (navMgr.current.navNode.filter.contains(NodeTypeIn(Set("F")))) "textBtn indicator active" else "textBtn indicator")
-          )("[FILES]"),
-          div(
-            className := (if (navMgr.current.navNode.filter.contains(NodeTypeIn(Set("D")))) "textBtn indicator active" else "textBtn indicator")
-          )("[DIRS]"),
-          div(
-            className := (if (navMgr.current.navNode.filter.contains(Empty)) "textBtn indicator active" else "textBtn indicator")
-          )("[EMPTY]"),
-          div(
-            className := (if (navMgr.current.navNode.filter.contains(NonEmpty)) "textBtn indicator active" else "textBtn indicator")
-          )("[NON-EMPTY]"),
-          div(
-            className := (if (navMgr.current.navNode.filter.contains(HasDups)) "textBtn indicator active" else "textBtn indicator")
-          )("[DUPS]"),
-          div(
-            className := (if (navMgr.current.navNode.filter.contains(HasExtDups)) "textBtn indicator active" else "textBtn indicator")
-          )("[EXTDUPS]"),
-          div(
-            className := (if (navMgr.current.viewNode.aggregate) "textBtn indicator active" else "textBtn indicator")
-          )("[AGGR]"),
-          div(
-            className := (if (!navMgr.current.viewNode.aggregate) "textBtn indicator active" else "textBtn indicator")
-          )("[NOAGGR]"),
-          div(
-            className := "textBtn",
+            className := "iconBtn",
             onClick := (_ => navMgr.syncNext())
-          )("[SYNC]")
+          )(span(title := "SYNC-UP", className := "mdi mdi-arrow-collapse-up")),
+
+          div(className := "iconBtn separator"),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.current.navNode.selection == DirectChildren) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.setSelection(DirectChildren)))
+          )(span(title := "DIRECT", className := "mdi mdi-layers-outline")),
+          div(
+            className := (if (navMgr.current.navNode.selection == DeepChildren) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.setSelection(DeepChildren)))
+          )(span(title := "DEEP", className := "mdi mdi-layers-triple-outline")),
+          div(
+            className := (if (navMgr.current.navNode.selection == DupNodes) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.setSelection(DupNodes)))
+          )(span(title := "DOUBLES", className := "mdi mdi-checkbox-multiple-blank-outline")),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(NodeTypeIn(Set("F")))) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(NodeTypeIn(Set("F")))))
+          )(span(title := "FILES", className := "mdi mdi-file-outline")),
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(NodeTypeIn(Set("D")))) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(NodeTypeIn(Set("D")))))
+          )(span(title := "DIRS", className := "mdi mdi-folder-outline")),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(Empty)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(Empty)))
+          )(span(title := "EMPTY", className := "mdi mdi-tray")),
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(NonEmpty)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(NonEmpty)))
+          )(span(title := "NON-EMPTY", className := "mdi mdi-tray-full")),
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(HasDups)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(HasDups)))
+          )(span(title := "DUPS", className := "mdi mdi-file-multiple-outline")),
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(HasExtDups)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(HasExtDups)))
+          )(span(title := "EXTDUPS", className := "mdi mdi-folder-multiple-outline")),
+
+          div(className := "iconBtn separator"),
+          div(className := "iconBtn separator"),
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(Ignored)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(Ignored)))
+          )(span(title := "IGNORED", className := "mdi mdi-cancel")), // mdi-cancel mdi-vanish
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(Deleted)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(Deleted)))
+          )(span(title := "DELETED", className := "mdi mdi-file-excel-box-outline")),
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(Inactive)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(Inactive)))
+          )(span(title := "INACTIVE", className := "mdi mdi-delete-outline")), // mdi-delete-forever-outline
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(Active)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(Active)))
+          )(span(title := "ACTIVE", className := "mdi mdi-delete-off-outline")),
+
+          div(className := "iconBtn separator"),
+
+          div(
+            className := (if (navMgr.current.navNode.filter.contains(NoSafeDup)) "iconBtn active" else "iconBtn"),
+            onClick := (_ => navMgr.changeCurrNavNode(_.toggleFilter(NoSafeDup)))
+          )(span(title := "NOSAFE", className := "mdi mdi-select-multiple")),
+
+          div(className := "iconBtn separator"),
+          div(className := "iconBtn separator"),
+          div(
+            className := "iconBtn",
+            onClick := (_ => navMgr.reload())
+          )(span(title := "RELOAD", className := "mdi mdi-refresh")),
         ),
         hr(),
         div(className := "breadcrumbHolder")(
@@ -247,8 +383,7 @@ import scala.collection.decorators._
             div(
               key := navNode.nodes.map(_.path).mkString(","),
               className := "breadcrumb textBtn",
-              onClick := (_ => navMgr.up(idx)),
-              title := s"${viewNode.manual}"
+              onClick := (_ => navMgr.up(idx))
             )(navNode.nodes match {
               case node :: Nil =>
                 val deepMark = if (navNode.selection == DeepChildren) " [*]" else ""
@@ -307,7 +442,16 @@ import scala.collection.decorators._
             aggrNodes.take(fetchMgr.limit).zipWithIndex.map { case (node, idx) =>
               tr(
                 key := node.path,
-                className := (if (selMgr.selected.contains(node)) "nodeRow selectedRow" else "nodeRow"),
+                className := Seq(
+                  "nodeRow",
+                  if (selMgr.selected.contains(node)) "selectedRow" else "",
+                  node.mark match {
+                    case Some(MarkType.Ignored) => "markedIgnored"
+                    case Some(MarkType.Deleted) => "markedDeleted"
+                    case Some(MarkType.Saved) => "markedSaved"
+                    case None => ""
+                  }
+                ).mkString(" "),
                 onDoubleClick := {
                   case _ if node.ntype == "D" && !navMgr.nextNavNode.viewNode.aggregate => navMgr.down(node)
                   case _ if node.ntype == "D" && navMgr.nextNavNode.viewNode.aggregate =>
@@ -373,7 +517,6 @@ import scala.collection.decorators._
                 selMgr.selected.toList,
                 navMgr.nextNavNode.setSelection(DeepChildren)
                   .addFilter(ChildFilter.NodeTypeIn(Set("F")))
-                  .setManual(false)
               )
             }
           )("CHILDREN"),
@@ -385,7 +528,6 @@ import scala.collection.decorators._
                 navMgr.nextNavNode.setSelection(DeepChildren)
                   .addFilter(HasDups)
                   .addFilter(NodeTypeIn(Set("F")))
-                  .setManual(false)
               )
             }
           )("DUPS"),
@@ -398,7 +540,6 @@ import scala.collection.decorators._
                   .setFullPath(true)
                   .addFilter(HasExtDups)
                   .addFilter(NodeTypeIn(Set("F")))
-                  .setManual(false)
               )
               fetchMgr.sortByPath()
             }
@@ -409,11 +550,35 @@ import scala.collection.decorators._
               navMgr.down(selMgr.selected.toList,
                 navMgr.nextNavNode.setSelection(DupNodes)
                   .setAggregate(true)
-                  .setFullPath(true)
-                  .setManual(false))
+                  .setFullPath(true))
               fetchMgr.sortByPath()
             }
           )(s"DOUBLES (${selMgr.selected.map(_.hash).size})"),
+          hr(className := "divider"),
+          div(
+            className := "item selectable",
+            onClick := { _ =>
+              mark(MarkReq(MarkType.Ignored, selMgr.selected.toList))
+            }
+          )(s"MARK IGNORED (${selMgr.selected.size})"),
+          div(
+            className := "item selectable",
+            onClick := { _ =>
+              mark(MarkReq(MarkType.Deleted, selMgr.selected.toList))
+            }
+          )(s"MARK DELETED (${selMgr.selected.size})"),
+          div(
+            className := "item selectable",
+            onClick := { _ =>
+              mark(MarkReq(MarkType.Saved, selMgr.selected.toList))
+            }
+          )(s"MARK SAVED (${selMgr.selected.size})"),
+          div(
+            className := "item selectable",
+            onClick := { _ =>
+              mark(MarkReq(None, selMgr.selected.toList))
+            }
+          )(s"UNMARK (${selMgr.selected.size})"),
         ),
 
 
@@ -449,7 +614,7 @@ object NodeCol {
     NodeCol(name)(transform andThen (x => Some(x)))
 }
 
-case class NodeStatCol[A <: Stat, B](name: String, key: Class[A])(transform: A => B) extends ColMgr.ColDef[NodeLite] {
+case class NodeStatCol[A <: Stat, B](name: String, key: StatKey[A])(transform: A => B) extends ColMgr.ColDef[NodeLite] {
   def get(node: NodeLite): Option[String] =
     get(node.stats)
   def get(stats: Stats): Option[String] =

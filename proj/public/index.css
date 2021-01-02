@@ -100,6 +100,18 @@ body {
   cursor: default;
 }
 
+.nodeRow.markedIgnored {
+  color: fuchsia;
+}
+
+.nodeRow.markedDeleted {
+  color: crimson;
+}
+
+.nodeRow.markedSaved {
+  color: limegreen;
+}
+
 .alternate .nodeRow:nth-child(odd){
     /*color: cornflowerblue;*/
     color: #0059ff;
@@ -158,19 +170,47 @@ body {
   background: goldenrod;
 }
 
-.textBtn.indicator:hover {
-  background: none;
+.iconBtn {
+  cursor: default;
+  display: inline-block;
+  margin: 0px 1px;
+  font-size: 18px;
+  border-radius: 4px;
+  color: darkgray;
 }
 
-.textBtn.indicator.active {
-  background: antiquewhite;
+.iconBtn.separator {
+  border-left: 1px solid black;
+  display: inline;
 }
 
-.hiddenMenu .textBtn {
+.iconBtn .mdi{
+  padding: 0px 2px;
+}
+
+.iconBtn:hover {
+  background: beige;
+}
+
+.iconBtn.active {
+  background: lavender;
+  color: black;
+}
+
+.iconBtn.active:hover {
+  background: goldenrod;
+}
+
+.iconBtn.hideMenu {
+  color:black;
+  border: 1px solid black;
+}
+
+.hiddenMenu .iconBtn {
   display: none;
 }
 
-.hiddenMenu .textBtn.hideMenu {
+.hiddenMenu .iconBtn.hideMenu {
   display: inline-block;
 }
 
