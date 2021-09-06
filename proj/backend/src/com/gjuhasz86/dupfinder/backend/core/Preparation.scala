@@ -12,13 +12,20 @@ import com.gjuhasz86.dupfinder.shared.NodeType._
 object Preparation {
 
   def main(args: Array[String]): Unit = {
-    val dir = args.head.toFile
-    val root = dir.parent
+    val (root,dirs) = args.toList.map(_.toFile) match {
+      case dir :: Nil => 
+        (dir.parent, dir :: Nil)
+      case root :: dirs =>
+        (root, dirs)
+      case _ =>
+        throw new IllegalArgumentException("Expected one or more arguments")
+    }
+    
     val outputFile = "dist/data/nodes.csv".toFile
     outputFile.clear()
     outputFile.parent.createDirectories()
 
-    val nodes = walkDir(dir :: Nil, Nil)
+    val nodes = walkDir(dirs, Nil)
     nodes.reverse.foreach { node =>
       val path = node.file.relativeTo(root)
       val row = s"${node.ntype.short},${node.size},$path"
